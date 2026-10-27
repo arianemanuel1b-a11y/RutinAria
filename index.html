@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Onori">
+<meta name="theme-color" content="#141312">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Bitácora Onori</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: una columna de planilla de gimnasio. Barra superior fija (reloj + eficiencia),
+   tarjetas por ejercicio con filas de serie, panel de descanso anclado abajo.
+   Color por categoría = disco olímpico (rojo 25 · azul 20 · amarillo 15). */
+:root{
+  --bg:#efede9; --surface:#fbfaf8; --sunk:#e5e2dd; --ink:#1c1b19; --muted:#69645d; --line:#d6d1ca;
+  --red:#c63328; --blue:#2356a8; --yellow:#b88700; --green:#2c7a4b;
+  --accent:var(--red); --on-accent:#fff;
+  --f-display:'Big Shoulders Display','Arial Narrow','Helvetica Neue',sans-serif;
+  --f-body:'Barlow',-apple-system,'Segoe UI',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141312; --surface:#1d1c1a; --sunk:#262421; --ink:#f0ebe4; --muted:#a39b91; --line:#35322e;
+  --red:#ec5547; --blue:#6b9cec; --yellow:#e7b632; --green:#4fbf7e; --on-accent:#140f0e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141312; --surface:#1d1c1a; --sunk:#262421; --ink:#f0ebe4; --muted:#a39b91; --line:#35322e;
+  --red:#ec5547; --blue:#6b9cec; --yellow:#e7b632; --green:#4fbf7e; --on-accent:#140f0e; color-scheme:dark}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 120px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.disp{font-family:var(--f-display);font-weight:900;letter-spacing:.01em;line-height:.95;text-transform:uppercase}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+h1,h2,h3{margin:0;text-wrap:balance}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+
+/* barra superior */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;padding:8px max(16px,env(safe-area-inset-left,0px)) 10px;border-bottom:1px solid var(--line)}
+.brand{font-size:30px}
+.brand small{display:block;font-family:var(--f-body);font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);margin-top:4px}
+.badge{font-size:12px;padding:3px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.iconbtn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);font-size:20px;flex:none}
+.clock{font-size:26px}
+.effbar{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.effbar i{display:block;height:100%;background:var(--green);transition:width .4s}
+.eff-warn .effbar i{background:var(--yellow)} .eff-bad .effbar i{background:var(--red)}
+
+/* botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:var(--r);font-weight:700;background:var(--sunk)}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.block{width:100%}
+.btn.sm{min-height:36px;padding:0 12px;font-size:14px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* tarjetas */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.plate{width:28px;height:28px;border-radius:50%;flex:none;border:5px solid var(--pc);box-shadow:inset 0 0 0 3px var(--surface),inset 0 0 0 9px var(--pc)}
+.plate.red{--pc:var(--red)} .plate.blue{--pc:var(--blue)} .plate.yellow{--pc:var(--yellow)}
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ex.complete{opacity:.72}
+.ex-head{padding:14px 14px 10px;display:flex;gap:12px;align-items:flex-start}
+.ex-name{font-size:18px;font-weight:700;line-height:1.2}
+.ex-meta{font-size:14px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--sunk);white-space:nowrap}
+.chip.up,.chip.force{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
+.chip.down{background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red)}
+.chip.hold{color:var(--muted)}
+.chip.ss{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+.target{padding:0 14px 10px;font-size:14px}
+.target b{font-family:var(--f-mono);font-weight:600}
+.warm{padding:0 14px 10px;font-size:13px;color:var(--muted)}
+.sets{border-top:1px solid var(--line)}
+.set{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:0 14px;border-bottom:1px solid var(--line);text-align:left}
+.set:last-child{border-bottom:0}
+.set .idx{width:26px;font-family:var(--f-mono);color:var(--muted);font-size:14px}
+.set .val{flex:1;font-family:var(--f-mono);font-size:17px;font-variant-numeric:tabular-nums}
+.set .st{font-size:13px;font-weight:600}
+.set.ready{background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+.set.ready .val{color:var(--accent);font-family:var(--f-body);font-weight:700;font-size:16px}
+.set.locked{color:var(--muted)}
+.set.done .tick{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:var(--on-accent);font-size:14px;font-weight:800}
+.set .miss{color:var(--red)} .set .over{color:var(--green)}
+.ss-ex{border-top:1px solid var(--line);padding-top:10px}
+.ss-ex>.row{padding:0 14px 8px}
+.ss-tag{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--blue) 18%,transparent);color:var(--blue);font-family:var(--f-mono);font-weight:600;font-size:14px}
+.ss-series{border-bottom:1px solid var(--line);padding-bottom:4px}
+.ss-series:last-child{border-bottom:0}
+.ss-series.cur{background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
+.ss-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 2px}
+.ss-series .set{border-bottom:0;min-height:52px;background:transparent}
+.ss-in{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
+.ss-in input{width:70px;height:44px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);text-align:center;font-family:var(--f-mono);font-size:18px;font-weight:600}
+.ss-in input[data-f="r"]{width:52px}
+.ss-ok{margin-left:auto;width:48px;height:44px;border-radius:10px;background:var(--accent);color:var(--on-accent);font-size:20px;font-weight:800;flex:none}
+.note{margin:0 14px 12px;padding:10px 12px;border-radius:8px;background:var(--sunk);font-size:14px}
+.note.low{background:color-mix(in srgb,var(--red) 11%,var(--surface))}
+.note.high{background:color-mix(in srgb,var(--green) 13%,var(--surface))}
+
+/* panel de descanso */
+.rest{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--ink);color:var(--bg);padding:14px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));border-radius:18px 18px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+.rest-in{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.rest .big{font-family:var(--f-display);font-weight:900;font-size:64px;line-height:.9;font-variant-numeric:tabular-nums}
+.rest .rbar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--bg) 22%,transparent);overflow:hidden}
+.rest .rbar i{display:block;height:100%;background:var(--accent)}
+.rest .btn{background:color-mix(in srgb,var(--bg) 14%,transparent);color:var(--bg)}
+.rest .btn.primary{background:var(--accent);color:var(--on-accent)}
+.rest.over{background:var(--green);color:#fff}
+.rest.over .btn{background:rgba(255,255,255,.18);color:#fff}
+.rest .sg{font-size:14px;opacity:.9}
+.flash{animation:fl .5s 3}
+@keyframes fl{50%{filter:brightness(1.5)}}
+
+/* hoja inferior */
+.scrim{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.45);display:flex;align-items:flex-end}
+.sheet{width:100%;background:var(--surface);border-radius:20px 20px 0 0;padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet-in{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.stepper{display:grid;grid-template-columns:64px 1fr 64px;gap:8px;align-items:center}
+.stepper button{height:64px;border-radius:12px;background:var(--sunk);font-size:28px;font-weight:700}
+.stepper input{width:100%;height:64px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);text-align:center;font-family:var(--f-mono);font-size:30px;font-weight:600}
+.rirs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.rirs button{height:52px;border-radius:10px;background:var(--sunk);font-family:var(--f-mono);font-size:20px;font-weight:600}
+.rirs button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.lights{display:flex;gap:6px}
+.lights button{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:var(--sunk);font-size:13px;font-weight:700}
+.lights .v[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.lights .a[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:#1c1b19}
+.lights .r[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.joints{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.joints button{padding:6px 10px;border-radius:99px;background:var(--sunk);font-size:13px}
+.joints button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+/* tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs button{flex:1;max-width:200px;height:56px;font-size:14px;font-weight:600;color:var(--muted)}
+.tabs button[aria-current="page"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--accent)}
+
+/* volumen */
+.vol{display:grid;grid-template-columns:86px 1fr 66px;gap:6px 10px;align-items:center;font-size:14px}
+.vbar{position:relative;height:12px;background:var(--sunk);border-radius:3px}
+.vbar i{position:absolute;inset:0 auto 0 0;background:var(--ink);border-radius:3px}
+.vbar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--accent)}
+.hist-item{width:100%;text-align:left;display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.prog-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translateX(-50%);z-index:40;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
+/* documento técnico */
+.doc{max-width:68ch}
+.doc h2{font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:28px;margin:28px 0 8px}
+.doc h3{font-size:17px;margin:20px 0 6px}
+.doc p,.doc li{font-size:15px}
+.doc code{font-family:var(--f-mono);font-size:13px;background:var(--sunk);padding:1px 5px;border-radius:4px}
+.doc pre{font-family:var(--f-mono);font-size:12.5px;line-height:1.5;background:var(--sunk);padding:12px;border-radius:8px;overflow-x:auto;margin:8px 0}
+.doc .formula{font-family:var(--f-mono);font-size:14px;background:var(--surface);border:1px solid var(--line);padding:10px 12px;border-radius:8px;overflow-x:auto;white-space:nowrap}
+.tbl{overflow-x:auto;margin:10px 0}
+.tbl table{border-collapse:collapse;font-size:14px;min-width:520px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:8px 10px 8px 0;text-align:left;vertical-align:top}
+.tbl th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="app" class="wrap"></div>
+<section id="doc" class="wrap" hidden>
+  <div class="top"><div class="disp brand">Sistema<small>Arquitectura, datos y motores lógicos de la bitácora</small></div></div>
+  <div class="doc">
+    <h2>1 · Arquitectura</h2>
+    <p><b>Recomendación: Web App progresiva, local-first, con sincronización opcional en la nube.</b> Un único archivo HTML que corre en dos destinos sin cambios de código: esta página (datos sincronizados en tu cuenta de Claude) y una PWA autohosteada que se instala en la pantalla de inicio del iPhone.</p>
+    <div class="tbl"><table>
+      <tr><th>Criterio</th><th>Nativa (SwiftUI)</th><th>PWA local-first</th></tr>
+      <tr><td>Costo y despliegue</td><td>Mac + Xcode; sin cuenta paga la firma vence a los 7 días; USD 99/año para TestFlight</td><td>Gratis (GitHub Pages / Netlify). Actualizás subiendo un archivo</td></tr>
+      <tr><td>Cronómetro con pantalla bloqueada</td><td>Notificación local + Live Activity en la pantalla de bloqueo</td><td>Sin notificación local programable; se resuelve con timestamps + Wake Lock (ver §4)</td></tr>
+      <tr><td>Offline en el gimnasio</td><td>Sí</td><td>Sí (service worker + almacenamiento local)</td></tr>
+      <tr><td>Persistencia</td><td>SwiftData</td><td>Instalada en inicio, Safari no le aplica el borrado por 7 días de inactividad; además <code>storage.persist()</code> y backup JSON</td></tr>
+      <tr><td>Iteración</td><td>Compilar y reinstalar</td><td>Editar y recargar</td></tr>
+    </table></div>
+    <p><b>Nube vs. local.</b> El registro de una serie no puede depender de la señal (sótanos de gimnasio). Por eso la escritura va primero al dispositivo y después, en segundo plano, a la nube. La nube es respaldo y multi-dispositivo, nunca un requisito para entrenar.</p>
+    <p><b>Cuándo migrar a nativa.</b> Solo si querés la cuenta regresiva en la pantalla de bloqueo o Dynamic Island. Los modelos y fórmulas de abajo se trasladan 1:1 a Swift.</p>
+
+    <h2>2 · Modelo de datos</h2>
+    <p>Rutas en la base del artefacto (privadas por usuario). En la PWA, las mismas claves en almacenamiento local.</p>
+<pre>data/users/{uid}/profile              → Profile
+data/users/{uid}/active               → ActiveSession (borrador en curso)
+data/users/{uid}/profile/sessions/{id} → Session (una por entrenamiento)</pre>
+<pre>// Catálogo (estático, en código)
+Exercise {
+  id: string            // "d1_pbarra"
+  name: string
+  sets: number; rmin: number; rmax: number
+  rest: number          // segundos, según la rutina
+  cat: 'b'|'s'|'a'      // básico · semipesado · aislamiento
+  inc: number           // incremento de carga del equipo (kg)
+  per: boolean          // kg por mancuerna
+  uni: boolean          // unilateral (c/p)
+  g: string|null        // id de superserie (agrupa en la UI, nunca en los datos)
+  mus: {[músculo]: 1|0.5}
+  alt: string           // variante en máquina
+}
+
+Profile {
+  updatedAt: epoch_ms
+  lastDay: 1..4
+  prog:  {[exId]: { w, target, status:'new'|'hold'|'up'|'force'|'down', miss, reason }}
+  best:  {[exId]: e1RM_kg}
+  joint: {[exId]: ('v'|'a'|'r')[]}   // últimas 3 sesiones
+  swaps: {[exId]: nombreVariante}
+}
+
+ActiveSession {
+  id; day; startedAt; updatedAt
+  phase: 'train'|'finish'
+  sets:  {[exId]: SetLog[]}
+  nextW: {[exId]: kg}                // carga sugerida aplicada
+  rest:  { startedAt, endsAt, total, exId, idx, sugg, done } | null
+  fatigue: {[exId]: { c:'v'|'a'|'r', j: string[] }}
+}
+
+SetLog  { w: kg, r: reps, rir?: 0..4, t: epoch_ms }
+
+Session {
+  id; day; startedAt; endedAt; minutes
+  efficiency: %; tonnage: kg
+  exercises: [{ id, name, cat, ss, sets: SetLog[], e1rm, light, joints }]
+  // ss = id de superserie o null: solo un vínculo de presentación.
+  // A y B son dos filas con su propio id, historial, prescripción y semáforo.
+}</pre>
+    <p>Equivalente relacional (si migrás a SQL o SwiftData): <code>exercise</code>, <code>session(id, day, started_at, ended_at, efficiency)</code>, <code>set_log(session_id, exercise_id, idx, kg, reps, rir, logged_at)</code>, <code>joint_flag(session_id, exercise_id, light, joints)</code>, <code>prescription(exercise_id, kg, target, status, reason, updated_at)</code>.</p>
+
+    <h2>3 · Motores lógicos</h2>
+    <h3>Base: 1RM estimado (Epley)</h3>
+    <div class="formula">e1RM(w, r, RIR) = w · (1 + (r + RIR) / 30) &nbsp;&nbsp;·&nbsp;&nbsp; carga(e1RM, n) = e1RM / (1 + n/30)</div>
+    <p>Con RIR la capacidad real de la serie es r + RIR. <code>carga()</code> invierte la fórmula: la carga que daría exactamente n reps al fallo. Toda carga se redondea hacia abajo al incremento del equipo: <code>⌊x / inc⌋ · inc</code>.</p>
+
+    <h3>A · Autorregulación intra-sesión (después de cada serie)</h3>
+    <p><b>r &lt; r<sub>min</sub></b> (déficit d = r<sub>min</sub> − r):</p>
+    <div class="formula">p = clamp(1 − (1 + r/30) / (1 + rmin/30), 5 %, 10 %) &nbsp;→&nbsp; w' = ⌊w · (1 − p)⌋inc</div>
+    <p>Si d = 1 el déficit es de recuperación: se recomienda primero <b>+45 s</b> de descanso. Si d ≥ 2 la carga excede la capacidad del día: se recomienda primero <b>bajar a w'</b>. Ambas opciones quedan disponibles.</p>
+    <p><b>r &gt; r<sub>max</sub></b>: la carga quedó liviana (regla Onori: subí en la siguiente serie).</p>
+    <div class="formula">w' = clamp(⌊carga(e1RM(w, r), rmin)⌋inc, w + inc, ⌊1,10 · w⌋inc)</div>
+
+    <h3>B · Sobrecarga progresiva entre sesiones</h3>
+    <p>Se evalúa en orden, con la 1.ª serie (w₀, r₀), la última serie con su RIR y el mejor e1RM de la sesión:</p>
+    <ol>
+      <li><b>RIR ≥ 2</b> en la última serie → <b>aumento forzado</b>: w = clamp(carga(e1RM*, rmin), w₀ + inc, 1,10·w₀).</li>
+      <li><b>r₀ ≥ r<sub>max</sub></b> → <b>subir</b> con la misma fórmula (doble progresión: se llegó al techo del rango).</li>
+      <li><b>r₀ &lt; r<sub>min</sub></b> → mantener carga y marcar <code>miss</code>. Si la sesión anterior ya tenía <code>miss</code>: <b>descarga</b> w = ⌊0,90·w₀⌋inc.</li>
+      <li>Dentro del rango → mantener carga, objetivo r₀ + 1.</li>
+    </ol>
+    <p>El tope de +10 % evita que una serie con muchas reps sobrantes (o un RIR optimista) dispare un salto de carga que rompa la técnica.</p>
+
+    <h3>C · Eficiencia diaria</h3>
+    <div class="formula">E = 100 · (1 − Σ kᵢ · max(0, rminᵢ − rᵢ) / Σ kⱼ · rminⱼ · seriesⱼ)</div>
+    <p>k = 3 (básico), 2 (semipesado), 1 (aislamiento). Arranca en 100 % y solo baja. Una rep faltante en un básico pesa exactamente el triple que en un aislamiento. Al cerrar la sesión, cada serie no realizada cuenta como r<sub>min</sub> reps faltantes. Ejemplo Día 1: denominador 262 → una rep perdida en press plano con barra resta 1,15 %; en cruce de poleas, 0,38 %.</p>
+
+    <h3>D · Fatiga articular</h3>
+    <p>Semáforo por ejercicio al cerrar (verde / amarillo / rojo + articulación). Ventana móvil de las últimas 3 sesiones de ese ejercicio: <b>≥ 2 rojos → sugerir variante en máquina</b>; 1 rojo o 2 amarillos → “vigilar”. Al aceptar la variante, la prescripción de ese ejercicio se reinicia porque la carga no es transferible entre máquinas.</p>
+
+    <h3>Motores adicionales</h3>
+    <ul>
+      <li><b>Superseries</b> (Día 4: curl en polea + extensión de tríceps). Ver §5.</li>
+      <li><b>Aproximación.</b> Para básicos: 8 × 50 %, 4 × 70 %, 2 × 85 % de la carga de trabajo, redondeado al equipo.</li>
+      <li><b>Récord estimado.</b> Si el e1RM de una serie supera tu mejor marca, se avisa en el momento.</li>
+      <li><b>Duración proyectada.</b> ritmo = tiempo transcurrido / series hechas; proyección = transcurrido + series restantes · ritmo. Alerta si supera los 60 min del método.</li>
+      <li><b>Volumen efectivo semanal.</b> Series por músculo (directo 1, indirecto 0,5) contra lo planificado en la rutina.</li>
+      <li><b>Estancamiento.</b> Dos sesiones seguidas bajo el rango disparan la descarga del 10 % (regla B.3).</li>
+    </ul>
+
+    <h2>4 · Cronómetro sin desincronización</h2>
+    <p>iOS congela el JavaScript al bloquear la pantalla o cambiar de app, así que un contador que resta segundos con <code>setInterval</code> se atrasa. Acá el temporizador <b>no cuenta</b>: guarda un instante absoluto y siempre calcula contra el reloj del sistema.</p>
+<pre>rest.endsAt = Date.now() + duración          // se persiste al instante
+restante    = rest.endsAt − Date.now()       // recalculado en cada cuadro
+visibilitychange → visible: recalcular, re-pedir Wake Lock
+si restante ≤ 0 mientras estaba oculto: marcar listo y mostrar "+m:ss" de exceso</pre>
+    <p>Como el estado vive en almacenamiento (no en memoria), sobrevive al bloqueo, a que iOS descargue la pestaña e incluso a cambiar de dispositivo. Durante la sesión se pide <code>navigator.wakeLock</code> para que la pantalla no se apague (funciona en apps de inicio desde iOS 18.4). Lo único que la web no puede hacer en iPhone es sonar con la pantalla ya bloqueada: eso requiere Web Push desde un servidor o la versión nativa.</p>
+    <h2>5 · Superseries</h2>
+    <p><b>Datos:</b> el curl en polea (A) y la extensión de tríceps (B) son dos ejercicios con id propio: <code>d4_curlpolea</code> y <code>d4_extri</code>. Cada serie se guarda en <code>sets[idEjercicio]</code>, así que historial, cargas, sugerencias, RIR, progresión, récords y semáforo se calculan por separado. El campo <code>g</code> solo los agrupa en pantalla.</p>
+    <p><b>Interfaz:</b> una tarjeta con bloques “Serie n”, cada uno con su fila de carga/reps para A y debajo la de B.</p>
+    <p><b>Cronómetro enlazado:</b> sea nA y nB la cantidad de series hechas.</p>
+<pre>al completar X:  si series(compañero) &lt; series(X) → descanso = 0 (seguí con el otro)
+                 si no                              → descanso = 90 s (A_n y B_n cerrados)
+serie n de X habilitada  ⇔  series(X) = n  ∧  series(compañero) ≥ n  ∧  sin descanso en curso</pre>
+    <p>El orden dentro de la serie es libre (A→B o B→A). Lo que no se puede es arrancar la serie n+1 de un ejercicio sin haber cerrado la serie n del otro. Las sugerencias de autorregulación del descanso se muestran por separado, una por ejercicio.</p>
+  </div>
+</section>
+<nav class="tabs" id="tabs">
+  <button data-act="tab" data-v="home" id="tab-home">Entrenar</button>
+  <button data-act="tab" data-v="history" id="tab-history">Progreso</button>
+  <button data-act="tab" data-v="system" id="tab-system">Sistema</button>
+</nav>
+<div id="rest"></div>
+<div id="sheet"></div>
+<div id="toast" class="toast" hidden></div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script>
+/* =====================================================================
+   BITÁCORA ONORI — Motor lógico (funciones puras, sin DOM)
+   Rutina: Recomposición corporal · Método H. Onori · 4 días Torso/Piernas
+   ===================================================================== */
+
+/* Categorías. k = peso del fallo en el algoritmo de eficiencia.
+   Color = disco olímpico: rojo 25 kg, azul 20 kg, amarillo 15 kg. */
+const CAT = {
+  b: { k: 3, label: 'Básico pesado', short: 'Básico', plate: 'red' },
+  s: { k: 2, label: 'Semipesado', short: 'Semi', plate: 'blue' },
+  a: { k: 1, label: 'Aislamiento', short: 'Aisl.', plate: 'yellow' },
+};
+
+const MUSCLES = {
+  pecho: 'Pecho', espalda: 'Espalda', hombros: 'Hombros', biceps: 'Bíceps',
+  triceps: 'Tríceps', cuad: 'Cuádriceps', isquios: 'Isquios', gluteos: 'Glúteos', gemelos: 'Gemelos',
+};
+
+/* X(id, nombre, series, repsMin, repsMax, descanso s, categoría, incremento kg, opciones)
+   per: el peso se registra por mancuerna · uni: unilateral (c/p) · g: superserie
+   mus: músculos (1 = directo, 0.5 = indirecto) · alt: variante en máquina */
+function X(id, name, sets, rmin, rmax, rest, cat, inc, o = {}) {
+  return { id, name, sets, rmin, rmax, rest, cat, inc, per: false, uni: false, g: null, note: '', mus: {}, alt: '', ...o };
+}
+
+/* Versión de rutina: una sesión activa de otra versión no se retoma. */
+const ROUTINE = 'onori-brazos-2026-10';
+
+const DAYS = [
+  { n: 1, title: 'Torso', focus: 'Pecho, espalda y hombro', ex: [
+    X('d1_pbarra', 'Press plano con barra', 3, 6, 8, 180, 'b', 2.5, { mus: { pecho: 1, triceps: .5, hombros: .5 }, alt: 'Press de pecho en máquina' }),
+    X('d1_jalon', 'Jalón al pecho (polea alta)', 3, 8, 10, 180, 'b', 2.5, { mus: { espalda: 1, biceps: .5 }, alt: 'Jalón en máquina convergente' }),
+    X('d1_militar', 'Press militar sentado con mancuernas', 3, 8, 10, 180, 'b', 2, { per: true, mus: { hombros: 1, triceps: .5 }, alt: 'Press de hombros en máquina' }),
+    X('d1_gironda', 'Remo en polea baja (Gironda)', 2, 10, 12, 120, 's', 2.5, { note: 'Semipesado, bilateral.', mus: { espalda: 1, biceps: .5 }, alt: 'Remo en máquina con pecho apoyado' }),
+    X('d1_cruce', 'Cruce de poleas', 2, 12, 15, 90, 'a', 2.5, { note: 'Excéntrica lenta.', mus: { pecho: 1 }, alt: 'Aperturas en máquina (peck deck)' }),
+  ]},
+  { n: 2, title: 'Piernas + bíceps', focus: 'Piernas corto + bíceps pesado', ex: [
+    X('d2_sent', 'Sentadilla (hack o libre)', 3, 6, 8, 180, 'b', 5, { mus: { cuad: 1, gluteos: .5 }, alt: 'Sentadilla péndulo' }),
+    X('d2_sillon', 'Sillón de cuádriceps', 3, 12, 15, 90, 'a', 5, { note: 'Pausa de 1 s arriba.', mus: { cuad: 1 }, alt: 'Sillón unilateral, rango controlado' }),
+    X('d2_isquios', 'Curl de isquios (acostado o sentado)', 3, 8, 10, 120, 'b', 5, { note: 'Pesado: reemplaza el estímulo posterior.', mus: { isquios: 1 }, alt: 'Curl de isquios sentado' }),
+    X('d2_curlbi', 'Curl de bíceps (mancuernas o barra)', 3, 6, 8, 150, 'b', 2, { note: 'Básico pesado de brazos. Registrá siempre con el mismo criterio (barra total o kg por mancuerna).', mus: { biceps: 1 }, alt: 'Curl de bíceps en máquina' }),
+    X('d2_martillo', 'Curl martillo con mancuernas', 2, 10, 12, 90, 'a', 2, { per: true, note: 'Foco en braquial y antebrazo.', mus: { biceps: 1 }, alt: 'Curl martillo en polea con cuerda' }),
+  ]},
+  { n: 3, title: 'Torso', focus: 'Espalda, pecho y tríceps pesado', ex: [
+    X('d3_remo', 'Remo con barra (bilateral)', 3, 6, 8, 180, 'b', 2.5, { mus: { espalda: 1, biceps: .5 }, alt: 'Remo en máquina con pecho apoyado' }),
+    X('d3_incl', 'Press inclinado con mancuernas', 3, 6, 8, 180, 'b', 2, { per: true, mus: { pecho: 1, triceps: .5, hombros: .5 }, alt: 'Press inclinado en máquina' }),
+    X('d3_lat', 'Elevaciones laterales (polea)', 3, 10, 12, 90, 'a', 2.5, { note: 'Aislamiento al fallo.', mus: { hombros: 1 }, alt: 'Vuelos laterales en máquina' }),
+    X('d3_frances', 'Press francés o copa a 2 manos', 3, 8, 10, 150, 'b', 2, { note: 'Básico pesado de brazos.', mus: { triceps: 1 }, alt: 'Extensión de tríceps en máquina' }),
+    X('d3_soga', 'Tríceps en polea (soga)', 2, 12, 15, 90, 'a', 2.5, { note: 'Apertura de la soga al final.', mus: { triceps: 1 }, alt: 'Extensión de tríceps en máquina' }),
+  ]},
+  { n: 4, title: 'Posterior + brazos', focus: 'Cadena posterior + remate de brazos', ex: [
+    X('d4_bulg', 'Estocadas búlgaras con mancuernas', 3, 10, 12, 150, 'b', 2, { per: true, uni: true, note: 'Por pierna. Registrá la pierna más débil.', mus: { cuad: 1, gluteos: 1 }, alt: 'Prensa unilateral' }),
+    X('d4_sillon', 'Sillón de cuádriceps', 3, 12, 15, 90, 'a', 5, { note: 'Pausa de 1 s arriba.', mus: { cuad: 1 }, alt: 'Sillón unilateral, rango controlado' }),
+    X('d4_gem', 'Elevación de talones', 4, 12, 15, 90, 'a', 5, { note: 'Sostener 2 s la contracción máxima.', mus: { gemelos: 1 }, alt: 'Gemelos en prensa' }),
+    X('d4_curlpolea', 'Curl de bíceps en polea', 3, 12, 15, 90, 'a', 2.5, { g: 'd4SS', mus: { biceps: 1 }, alt: 'Curl de bíceps en máquina' }),
+    X('d4_extri', 'Extensión de tríceps en polea', 3, 12, 15, 90, 'a', 2.5, { g: 'd4SS', mus: { triceps: 1 }, alt: 'Extensión de tríceps en máquina' }),
+  ]},
+];
+
+const EX = {};
+DAYS.forEach(d => d.ex.forEach(e => { EX[e.id] = { ...e, day: d.n }; }));
+
+/* ---------- Utilidades numéricas ---------- */
+const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+const r2 = x => Math.round(x * 100) / 100;
+/* Redondeo hacia abajo al incremento disponible del equipo (conservador). */
+const floorInc = (x, inc) => r2(Math.floor(x / inc + 1e-9) * inc);
+/* Redondeo al incremento más cercano (para bajadas de carga intra-sesión). */
+const roundInc = (x, inc) => r2(Math.round(x / inc) * inc);
+
+/* 1RM estimado (Epley). Con RIR, la capacidad real es r + RIR. */
+const e1rm = (w, r, rir = 0) => (w > 0 ? w * (1 + (r + rir) / 30) : 0);
+/* Carga que daría exactamente `reps` al fallo para un 1RM dado (Epley inverso). */
+const loadFor = (oneRm, reps) => oneRm / (1 + reps / 30);
+
+/* Límite de sobrecarga: al menos +1 incremento, como máximo +10 % (redondeado). */
+function boundedIncrease(w0, target, inc) {
+  const lo = r2(w0 + inc);
+  const hi = Math.max(lo, floorInc(w0 * 1.10, inc));
+  return clamp(floorInc(target, inc), lo, hi);
+}
+
+/* =====================================================================
+   1) AUTORREGULACIÓN INTRA-SESIÓN (después de cada serie)
+   ===================================================================== */
+function suggestAfterSet(ex, set) {
+  const { w, r } = set;
+  if (!(w > 0)) return { type: 'none' };
+  if (r < ex.rmin) {
+    const d = ex.rmin - r;
+    // Caída de carga necesaria para llegar a rmin con el 1RM de esta serie, acotada a 5–10 %.
+    const raw = 1 - (1 + r / 30) / (1 + ex.rmin / 30);
+    const pct = clamp(raw, 0.05, 0.10);
+    let wd = roundInc(w * (1 - pct), ex.inc);
+    if (wd >= w) wd = r2(w - ex.inc);
+    return { type: 'low', deficit: d, pct, wDown: Math.max(0, wd), addRest: 45, primary: d === 1 ? 'rest' : 'load' };
+  }
+  if (r > ex.rmax) {
+    const wUp = boundedIncrease(w, loadFor(e1rm(w, r), ex.rmin), ex.inc);
+    return { type: 'high', surplus: r - ex.rmax, wUp };
+  }
+  return { type: 'ok' };
+}
+
+/* =====================================================================
+   2) PROGRESIÓN ENTRE SESIONES (doble progresión + RIR + estancamiento)
+   prev = estado previo del ejercicio en el perfil
+   ===================================================================== */
+function nextPrescription(ex, sets, prev) {
+  prev = prev || {};
+  const done = sets.filter(s => s.w > 0);
+  if (!done.length) return { ...prev, status: prev.w ? 'hold' : 'new', reason: 'Sin series registradas.' };
+  const first = done[0];
+  const last = done[done.length - 1];
+  const rir = Number.isFinite(last.rir) ? last.rir : 0;
+  const w0 = first.w, r0 = first.r;
+  const best = Math.max(...done.map((s, i) => e1rm(s.w, s.r, i === done.length - 1 ? rir : 0)));
+  const up = () => boundedIncrease(w0, loadFor(best, ex.rmin), ex.inc);
+
+  if (rir >= 2) return { w: up(), target: ex.rmin, status: 'force', miss: false, reason: `RIR ${rir} en la última serie: aumento forzado.` };
+  if (r0 >= ex.rmax) return { w: up(), target: ex.rmin, status: 'up', miss: false, reason: `${r0} reps en la 1.ª serie: techo del rango alcanzado.` };
+  if (r0 < ex.rmin) {
+    if (prev.miss) return { w: floorInc(w0 * 0.90, ex.inc), target: ex.rmin + 1, status: 'down', miss: false, reason: 'Dos sesiones seguidas bajo el rango: descarga del 10 %.' };
+    return { w: w0, target: ex.rmin, status: 'hold', miss: true, reason: `${r0} reps, bajo el mínimo de ${ex.rmin}. Repetí la carga.` };
+  }
+  const target = Math.min(r0 + 1, ex.rmax);
+  return { w: w0, target, status: 'hold', miss: false, reason: `Dentro del rango. Objetivo: ${target} reps en la 1.ª serie.` };
+}
+
+/* =====================================================================
+   3) EFICIENCIA DIARIA (%)
+   E = 100 · (1 − Σ k·faltantes / Σ k·rmin·series)
+   faltantes = max(0, rmin − r) por serie; al cerrar, la serie no hecha cuenta rmin completo.
+   ===================================================================== */
+function efficiency(day, setsByEx, final = false) {
+  let den = 0, pen = 0, penB = 0;
+  for (const ex of day.ex) {
+    const k = CAT[ex.cat].k;
+    den += k * ex.rmin * ex.sets;
+    const logged = (setsByEx[ex.id] || []).filter(Boolean);
+    for (const s of logged) {
+      const p = k * Math.max(0, ex.rmin - s.r);
+      pen += p; if (ex.cat === 'b') penB += p;
+    }
+    if (final) pen += k * ex.rmin * Math.max(0, ex.sets - logged.length);
+  }
+  return { value: den ? Math.max(0, 100 * (1 - pen / den)) : 100, perRepBasic: 300 / den, perRepIso: 100 / den, den };
+}
+
+/* =====================================================================
+   4) FATIGA ARTICULAR — semáforo: v (verde) · a (amarillo) · r (rojo)
+   Ventana: últimas 3 sesiones del ejercicio. ≥ 2 rojas ⇒ sugerir variante en máquina.
+   ===================================================================== */
+function jointAlert(history) {
+  const win = (history || []).slice(-3);
+  const reds = win.filter(f => f === 'r').length;
+  const yellows = win.filter(f => f === 'a').length;
+  return { reds, yellows, swap: reds >= 2, watch: reds === 1 || yellows >= 2 };
+}
+
+/* =====================================================================
+   5) APROXIMACIÓN (calentamiento) para básicos pesados
+   ===================================================================== */
+function warmup(ex, w) {
+  if (ex.cat !== 'b' || !(w > 0)) return [];
+  return [[0.5, 8], [0.7, 4], [0.85, 2]].map(([p, reps]) => ({ w: Math.max(ex.inc, floorInc(w * p, ex.inc)), reps }));
+}
+
+/* =====================================================================
+   6) VOLUMEN EFECTIVO SEMANAL por músculo (directo 1, indirecto 0,5)
+   ===================================================================== */
+function weeklyVolume(sessions) {
+  const v = Object.fromEntries(Object.keys(MUSCLES).map(m => [m, 0]));
+  for (const s of sessions) for (const e of s.exercises || []) {
+    const ex = EX[e.id]; if (!ex) continue;
+    const n = (e.sets || []).length;
+    for (const [m, f] of Object.entries(ex.mus)) v[m] += n * f;
+  }
+  return v;
+}
+function plannedVolume() {
+  const v = Object.fromEntries(Object.keys(MUSCLES).map(m => [m, 0]));
+  DAYS.forEach(d => d.ex.forEach(ex => { for (const [m, f] of Object.entries(ex.mus)) v[m] += ex.sets * f; }));
+  return v;
+}
+
+/* =====================================================================
+   7) PROYECCIÓN DE DURACIÓN (objetivo Onori: 45–60 min)
+   ===================================================================== */
+function projectDuration(day, setsByEx, startedAt, now) {
+  const planned = day.ex.reduce((a, e) => a + e.sets, 0);
+  const done = day.ex.reduce((a, e) => a + (setsByEx[e.id] || []).length, 0);
+  const elapsed = (now - startedAt) / 1000;
+  const remaining = planned - done;
+  // Antes de la primera serie: estimación nominal (45 s de trabajo + descanso prescrito).
+  const nominal = day.ex.reduce((a, e) => a + e.sets * (45 + e.rest), 0) / planned;
+  const pace = done >= 2 ? Math.max(30, elapsed / done) : nominal;
+  return { planned, done, elapsed, projected: elapsed + remaining * pace };
+}
+
+/* ---------- Superseries: ¿el próximo paso es el compañero (sin descanso)? ---------- */
+function supersetPartner(day, ex) {
+  if (!ex.g) return null;
+  return day.ex.find(e => e.g === ex.g && e.id !== ex.id) || null;
+}
+function restAfter(day, ex, setsByEx) {
+  const p = supersetPartner(day, ex);
+  if (!p) return { rest: ex.rest, next: null };
+  const mine = (setsByEx[ex.id] || []).length;
+  const theirs = (setsByEx[p.id] || []).length;
+  if (theirs < mine && theirs < p.sets) return { rest: 0, next: p };
+  return { rest: Math.max(ex.rest, p.rest), next: null };
+}
+
+/* Serie n de un ejercicio en superserie: requiere que el compañero haya cerrado la serie n−1. */
+function groupLock(day, ex, idx, setsByEx) {
+  const p = supersetPartner(day, ex);
+  if (!p || idx === 0) return false;
+  return (setsByEx[p.id] || []).length < Math.min(idx, p.sets);
+}
+
+if (typeof module !== 'undefined') module.exports = {
+  ROUTINE, supersetPartner, groupLock,
+  CAT, MUSCLES, DAYS, EX, floorInc, e1rm, loadFor, boundedIncrease, suggestAfterSet,
+  nextPrescription, efficiency, jointAlert, warmup, weeklyVolume, plannedVolume, projectDuration, restAfter,
+};
+
+</script>
+<script>
+/* =====================================================================
+   BITÁCORA ONORI — Aplicación (vista, estado, persistencia, cronómetros)
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const app = $('#app'), restEl = $('#rest'), sheetEl = $('#sheet'), toastEl = $('#toast'), docEl = $('#doc'), tabsEl = $('#tabs');
+const DAY = n => DAYS.find(d => d.n === n);
+const nf = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
+const kg = w => (w || w === 0) && w !== '' ? nf.format(w) : '—';
+const mmss = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+const JOINTS = ['Hombro', 'Codo', 'Muñeca', 'Rodilla', 'Lumbar', 'Cadera'];
+const STATUS = { new: 'Nuevo', hold: 'Mantener', up: 'Subir', force: 'Forzado', down: 'Descarga' };
+
+function defaultProfile() { return { v: 1, updatedAt: 0, prog: {}, best: {}, joint: {}, swaps: {}, lastDay: null }; }
+const S = { view: 'home', profile: defaultProfile(), active: null, sessions: [], sheet: null, confirm: null, result: null, openHist: null, draft: {} };
+
+/* ---------------- Persistencia: local primero, nube en segundo plano ---------------- */
+const LS = 'onori.v1.';
+const lsGet = k => { try { const v = localStorage.getItem(LS + k); return v ? JSON.parse(v) : null; } catch (e) { return null; } };
+const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(LS + k) : localStorage.setItem(LS + k, JSON.stringify(v)); } catch (e) {} };
+
+const Store = {
+  mode: 'local', db: null, uid: null, q: {}, pending: {}, dl: null,
+  async connect() {
+    try {
+      if (!(window.claude && window.claude.use)) return false;
+      const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+      window.claude.use('downloads').then(d => { this.dl = d; }).catch(() => {});
+      if (!db || !user) return false;
+      const id = await user.id();
+      if (!id) return false;
+      this.db = db; this.uid = id; this.mode = 'cloud';
+      return true;
+    } catch (e) { return false; }
+  },
+  ref(k) { return this.db.doc('data/users/' + this.uid + '/' + k); },
+  col() { return this.db.doc('data/users/' + this.uid + '/profile').collection('sessions'); },
+  async get(k) {
+    const local = lsGet(k);
+    if (this.mode !== 'cloud') return local;
+    try {
+      const s = await this.ref(k).get();
+      const remote = s.exists ? clone(s.data()) : null;
+      if (!remote) return local;
+      if (!local) return remote;
+      return (remote.updatedAt || 0) >= (local.updatedAt || 0) ? remote : local;
+    } catch (e) { return local; }
+  },
+  /* Una escritura a la vez por documento; si llegan varias, se manda solo la última. */
+  put(k, v) {
+    lsSet(k, v);
+    if (this.mode !== 'cloud') return;
+    this.pending[k] = v;
+    if (this.q[k]) return;
+    this.q[k] = (async () => {
+      while (k in this.pending) {
+        const val = this.pending[k]; delete this.pending[k];
+        try { val == null ? await this.ref(k).delete() : await this.ref(k).set(val); }
+        catch (e) { syncError(e); }
+      }
+      this.q[k] = null;
+    })();
+  },
+  async addSession(s) {
+    const all = lsGet('sessions') || [];
+    lsSet('sessions', [s, ...all.filter(x => x.id !== s.id)].slice(0, 400));
+    if (this.mode === 'cloud') { try { await this.col().doc(s.id).set(s); } catch (e) { syncError(e); } }
+  },
+  async listSessions() {
+    const local = lsGet('sessions') || [];
+    if (this.mode !== 'cloud') return local;
+    try {
+      const q = await this.col().orderBy('startedAt', 'desc').limit(400).get();
+      const remote = q.docs.map(d => clone(d.data()));
+      const ids = new Set(remote.map(s => s.id));
+      const onlyLocal = local.filter(s => !ids.has(s.id));
+      for (const s of onlyLocal) { try { await this.col().doc(s.id).set(s); } catch (e) {} }
+      const merged = [...remote, ...onlyLocal].sort((a, b) => b.startedAt - a.startedAt);
+      lsSet('sessions', merged.slice(0, 400));
+      return merged;
+    } catch (e) { return local; }
+  },
+};
+let syncWarned = false;
+function syncError(e) {
+  if (syncWarned) return; syncWarned = true;
+  toast(e && e.code === 'quota_exceeded' ? 'La nube está llena. Exportá un backup.' : 'Sin conexión: se guarda en el teléfono y se sincroniza después.');
+}
+
+function saveActive() { if (S.active) { S.active.updatedAt = Date.now(); } Store.put('active', S.active); }
+function saveProfile() { S.profile.updatedAt = Date.now(); Store.put('profile', S.profile); }
+
+/* ---------------- Pantalla activa y sonido ---------------- */
+let wake = null, actx = null;
+async function keepAwake() {
+  if (!S.active || document.visibilityState !== 'visible' || wake) return;
+  try { if ('wakeLock' in navigator) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; paintTop(); }); paintTop(); } } catch (e) { wake = null; }
+}
+function releaseAwake() { try { wake && wake.release(); } catch (e) {} wake = null; }
+function unlockAudio() {
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) {}
+}
+function beep() {
+  if (!actx) return;
+  try {
+    const t = actx.currentTime;
+    [0, .22, .44].forEach((d, i) => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = i === 2 ? 1320 : 880;
+      g.gain.setValueAtTime(.0001, t + d); g.gain.exponentialRampToValueAtTime(.35, t + d + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d + .17);
+      o.connect(g); g.connect(actx.destination); o.start(t + d); o.stop(t + d + .2);
+    });
+  } catch (e) {}
+}
+
+let toastT;
+function toast(msg, ms = 2600) { toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { toastEl.hidden = true; }, ms); }
+
+/* ---------------- Derivados ---------------- */
+const A = () => S.active;
+const logged = id => (S.active && S.active.sets[id]) || [];
+const exName = ex => S.profile.swaps[ex.id] || ex.name;
+const unit = ex => ex.per ? 'kg c/u' : 'kg';
+function restRunning() { const r = S.active && S.active.rest; return !!(r && !r.done && Date.now() < r.endsAt); }
+function setState(ex, idx) {
+  const n = logged(ex.id).length;
+  if (idx < n) return 'done';
+  if (idx > n) return 'order';
+  if (groupLock(DAY(S.active.day), ex, idx, S.active.sets)) return 'pair';
+  return restRunning() ? 'rest' : 'ready';
+}
+function prefill(ex, idx) {
+  const l = logged(ex.id), p = S.profile.prog[ex.id] || {};
+  const nw = S.active.nextW[ex.id];
+  const w = nw != null ? nw : l.length ? l[l.length - 1].w : (p.w != null ? p.w : '');
+  const r = l.length ? l[l.length - 1].r : (p.target || ex.rmin);
+  return { w, r };
+}
+function nextDay() { const l = S.profile.lastDay; return l ? (l % 4) + 1 : 1; }
+function weekStart() { const d = new Date(); const day = (d.getDay() + 6) % 7; d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - day); return d.getTime(); }
+
+/* ---------------- Render principal ---------------- */
+function render() {
+  const sys = S.view === 'system';
+  docEl.hidden = !sys; app.hidden = sys;
+  const inSession = S.view === 'session';
+  tabsEl.hidden = inSession;
+  ['home', 'history', 'system'].forEach(v => { const b = $('#tab-' + v); b.toggleAttribute('aria-current', false); if (S.view === v || (v === 'home' && S.view === 'result')) b.setAttribute('aria-current', 'page'); });
+  if (!sys) app.innerHTML = S.view === 'session' ? viewSession() : S.view === 'history' ? viewHistory() : S.view === 'result' ? viewResult() : viewHome();
+  renderRest(); renderSheet(); paintTop();
+}
+
+function storageBadge() {
+  return Store.mode === 'cloud' ? '<span class="badge">☁︎ Sincronizado</span>' : '<span class="badge">En este dispositivo</span>';
+}
+
+/* ---------- Hoy ---------- */
+function viewHome() {
+  const nd = nextDay();
+  const act = S.active;
+  const others = DAYS.filter(d => d.n !== nd);
+  const wk = S.sessions.filter(s => s.startedAt >= weekStart());
+  const vol = weeklyVolume(wk), plan = plannedVolume();
+  const maxV = Math.max(...Object.values(plan), ...Object.values(vol), 1);
+  const dd = DAY(nd);
+  return `
+  <div class="top"><div class="row between"><div class="disp brand">Bitácora Onori<small>Prioridad brazos · 4 días · al fallo real</small></div>${storageBadge()}</div></div>
+  <div class="stack" style="margin-top:14px">
+    ${act ? `<button class="panel row" data-act="resume" style="text-align:left;border-color:var(--accent)">
+        <div class="grow"><div class="eyebrow" style="color:var(--accent)">Sesión en curso</div><div style="font-weight:700;font-size:18px">Día ${act.day} · ${DAY(act.day).title} — ${DAY(act.day).focus}</div>
+        <div class="muted num" style="font-size:14px">${Object.values(act.sets).reduce((a, s) => a + s.length, 0)} series · empezó ${new Date(act.startedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</div></div>
+        <span class="btn primary sm">Retomar</span></button>` : ''}
+    <div class="panel stack">
+      <div><div class="eyebrow">${S.profile.lastDay ? 'Te toca hoy' : 'Primera sesión'} · Día ${nd}</div>
+      <h1 class="disp" style="font-size:48px;margin-top:4px">${dd.title}</h1>
+      <div class="muted" style="font-weight:600">${dd.focus}</div></div>
+      <div>${dd.ex.map(ex => { const p = S.profile.prog[ex.id] || {}; return `
+        <div class="row" style="padding:7px 0;border-top:1px solid var(--line);font-size:15px">
+          <span class="plate ${CAT[ex.cat].plate}" style="width:16px;height:16px;border-width:3px;box-shadow:none"></span>
+          <span class="grow">${esc(exName(ex))}</span>
+          <span class="num muted" style="font-size:14px">${ex.sets}×${ex.rmin}–${ex.rmax}</span>
+          <span class="num" style="min-width:64px;text-align:right;font-weight:600">${p.w != null ? kg(p.w) + ' kg' : '—'}</span>
+        </div>`; }).join('')}</div>
+      ${act ? '' : `<button class="btn primary block" data-act="start" data-n="${nd}">Empezar Día ${nd}</button>`}
+    </div>
+    ${act ? '' : `<div class="row" style="flex-wrap:wrap;gap:8px">${others.map(d => `<button class="btn ghost sm" data-act="start" data-n="${d.n}">Día ${d.n} · ${d.title} (${d.focus})</button>`).join('')}</div>`}
+    <div class="panel stack">
+      <div class="row between"><div><div class="eyebrow">Volumen efectivo de la semana</div><div class="muted" style="font-size:13px">Series por músculo · directo 1, indirecto 0,5 · <span style="color:var(--accent)">|</span> = planificado</div></div></div>
+      <div class="vol">${Object.keys(MUSCLES).map(m => `
+        <span>${MUSCLES[m]}</span>
+        <span class="vbar"><i style="width:${(vol[m] / maxV) * 100}%"></i><u style="left:${(plan[m] / maxV) * 100}%"></u></span>
+        <span class="num" style="text-align:right">${nf.format(vol[m])}/${nf.format(plan[m])}</span>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Sesión ---------- */
+function viewSession() {
+  const a = A(); const d = DAY(a.day);
+  if (a.phase === 'finish') return viewFinish();
+  return `
+  <div class="top" id="topbar">
+    <div class="row">
+      <button class="iconbtn" data-act="home" aria-label="Volver al inicio">‹</button>
+      <div class="grow"><div class="eyebrow">Día ${d.n}</div><div class="disp" style="font-size:24px">${d.title}</div></div>
+      <div style="text-align:right"><div class="clock num" id="clock">0:00</div><div class="muted" style="font-size:12px" id="wake"></div></div>
+    </div>
+    <div id="effwrap" style="margin-top:8px"></div>
+  </div>
+  <div class="stack" style="margin-top:14px">
+    ${(() => { const seen = new Set(); return d.ex.map(ex => {
+      if (!ex.g) return exCard(d, ex);
+      if (seen.has(ex.g)) return '';
+      seen.add(ex.g); const pair = d.ex.filter(e => e.g === ex.g);
+      return groupCard(d, pair[0], pair[1]); }).join(''); })()}
+    <div class="stack" style="margin-top:6px">
+      <button class="btn primary block" data-act="finish">Terminar sesión</button>
+      <button class="btn ghost block" data-act="discard">Descartar sesión</button>
+    </div>
+  </div>`;
+}
+
+/* Bloques por ejercicio: carga objetivo, aproximación, notas y autorregulación (siempre por ejercicio). */
+function exTarget(ex) {
+  const l = logged(ex.id), p = S.profile.prog[ex.id] || {};
+  const wTarget = S.active.nextW[ex.id] != null ? S.active.nextW[ex.id] : (l.length ? l[0].w : p.w);
+  const wu = warmup(ex, p.w);
+  return `${wTarget != null && wTarget !== '' ? `<div class="target">Carga: <b>${kg(wTarget)} ${unit(ex)}</b>${p.status && p.status !== 'new' && !l.length ? ` · <span class="chip ${p.status}">${STATUS[p.status]}</span> <span class="muted">${esc(p.reason || '')}</span>` : ''}${p.target && !l.length ? ` · objetivo <b>${p.target}</b> reps` : ''}</div>` : `<div class="target muted">Primera vez: elegí una carga que llegue al fallo dentro de ${ex.rmin}–${ex.rmax} reps.</div>`}
+    ${wu.length && !l.length ? `<div class="warm">Aproximación: ${wu.map(x => `<span class="num">${x.reps}×${kg(x.w)}</span>`).join(' · ')}</div>` : ''}
+    ${ex.note ? `<div class="warm">${esc(ex.note)}</div>` : ''}`;
+}
+function exNote(ex) {
+  const l = logged(ex.id), last = l[l.length - 1];
+  if (l.length >= ex.sets) {
+    const pr = nextPrescription(ex, l, S.profile.prog[ex.id]);
+    return `<div class="note ${pr.status === 'up' || pr.status === 'force' ? 'high' : pr.status === 'down' ? 'low' : ''}">Próxima sesión: <b class="num">${kg(pr.w)}</b> ${unit(ex)} · <span class="chip ${pr.status}">${STATUS[pr.status]}</span> ${esc(pr.reason)}</div>`;
+  }
+  const sg = last ? suggestAfterSet(ex, last) : null;
+  if (sg && sg.type === 'low') return `<div class="note low">Serie ${l.length}: ${last.r} reps, ${sg.deficit} bajo el mínimo. ${sg.primary === 'rest' ? `Recomendado: <b>+45 s</b> de descanso. Alternativa: bajar a <b class="num">${kg(sg.wDown)}</b> ${unit(ex)}.` : `Recomendado: bajar a <b class="num">${kg(sg.wDown)}</b> ${unit(ex)} (−${Math.round(sg.pct * 100)} %). Alternativa: +45 s.`}</div>`;
+  if (sg && sg.type === 'high') return `<div class="note high">Serie ${l.length}: ${last.r} reps, sobre el rango. Subí a <b class="num">${kg(sg.wUp)}</b> ${unit(ex)} en la próxima.</div>`;
+  return '';
+}
+function exCard(d, ex) {
+  const finished = logged(ex.id).length >= ex.sets;
+  return `
+  <article class="ex ${finished ? 'complete' : ''}" id="ex-${ex.id}">
+    <div class="ex-head">
+      <span class="plate ${CAT[ex.cat].plate}" title="${CAT[ex.cat].label}"></span>
+      <div class="grow">
+        <div class="ex-name">${esc(exName(ex))}${S.profile.swaps[ex.id] ? ' <span class="chip">variante</span>' : ''}</div>
+        <div class="ex-meta"><span class="num">${ex.sets}${ex.uni ? ' c/p' : ''} × ${ex.rmin}–${ex.rmax}</span> · descanso <span class="num">${mmss(ex.rest)}</span> · ${CAT[ex.cat].label}</div>
+      </div>
+    </div>
+    ${exTarget(ex)}
+    ${exNote(ex)}
+    <div class="sets">${Array.from({ length: ex.sets }, (_, i) => setRow(ex, i)).join('')}</div>
+  </article>`;
+}
+
+/* Superserie: una tarjeta, dos entidades independientes (A y B). Cada "Serie n" agrupa A_n y B_n. */
+function groupCard(d, a, b) {
+  const la = logged(a.id).length, lb = logged(b.id).length;
+  const finished = la >= a.sets && lb >= b.sets;
+  const n = Math.max(a.sets, b.sets);
+  const sub = (ex, tag) => `<div class="ss-ex"><div class="row" style="align-items:flex-start"><span class="ss-tag">${tag}</span><div class="grow">
+      <div class="ex-name" style="font-size:16px">${esc(exName(ex))}${S.profile.swaps[ex.id] ? ' <span class="chip">variante</span>' : ''}</div>
+      <div class="ex-meta"><span class="num">${ex.sets} × ${ex.rmin}–${ex.rmax}</span> · ${CAT[ex.cat].label}</div></div></div>
+    ${exTarget(ex)}${exNote(ex)}</div>`;
+  const series = Array.from({ length: n }, (_, i) => {
+    const dA = la > i, dB = lb > i;
+    const label = dA && dB ? '✓ completa' : dA ? 'falta B · sin descanso' : dB ? 'falta A · sin descanso' : '';
+    const cur = !(dA && dB) && Math.min(la, lb) === i;
+    return `<div class="ss-series ${cur ? 'cur' : ''}"><div class="ss-h"><span class="eyebrow">Serie ${i + 1}</span><span class="muted" style="font-size:12px">${label}</span></div>
+      ${i < a.sets ? ssRow(a, i, 'A') : ''}${i < b.sets ? ssRow(b, i, 'B') : ''}</div>`;
+  }).join('');
+  return `
+  <article class="ex ${finished ? 'complete' : ''}" id="ex-${a.id}">
+    <div class="ex-head">
+      <span class="plate ${CAT[a.cat].plate}" title="${CAT[a.cat].label}"></span>
+      <div class="grow"><div class="eyebrow" style="color:var(--blue)">Superserie</div>
+        <div class="ex-meta">A y B sin pausa · descanso de <span class="num">${mmss(Math.max(a.rest, b.rest))}</span> recién al completar ambos</div></div>
+    </div>
+    ${sub(a, 'A')}${sub(b, 'B')}
+    <div class="sets">${series}</div>
+  </article>`;
+}
+function ssRow(ex, i, tag) {
+  const st = setState(ex, i);
+  if (st === 'done') {
+    const s = logged(ex.id)[i];
+    const cls = s.r < ex.rmin ? 'miss' : s.r > ex.rmax ? 'over' : '';
+    return `<button class="set done" data-act="edit" data-ex="${ex.id}" data-i="${i}"><span class="ss-tag">${tag}</span>
+      <span class="val">${kg(s.w)} <span class="muted" style="font-size:13px">${unit(ex)}</span> × <span class="${cls}">${s.r}</span>${s.rir != null ? ` <span class="muted" style="font-size:13px">RIR ${s.rir}</span>` : ''}</span><span class="tick">✓</span></button>`;
+  }
+  if (st === 'ready') {
+    const k = ex.id + ':' + i;
+    const dr = S.draft[k] || (S.draft[k] = prefill(ex, i));
+    return `<div class="set"><span class="ss-tag">${tag}</span>
+      <label class="ss-in"><input id="dw-${ex.id}-${i}" data-draft="${k}" data-f="w" inputmode="decimal" autocomplete="off" value="${dr.w === '' ? '' : String(dr.w).replace('.', ',')}" placeholder="kg" aria-label="Carga ${tag}, serie ${i + 1}"><span>kg</span></label>
+      <label class="ss-in"><input id="dr-${ex.id}-${i}" data-draft="${k}" data-f="r" inputmode="numeric" autocomplete="off" value="${dr.r}" aria-label="Repeticiones ${tag}, serie ${i + 1}"><span>reps</span></label>
+      <button class="ss-ok" data-act="ssdone" data-ex="${ex.id}" data-i="${i}" aria-label="Completar ${tag}, serie ${i + 1}">✓</button></div>`;
+  }
+  const txt = st === 'rest' ? 'Bloqueada: descanso en curso' : st === 'pair' ? 'Cerrá primero la serie anterior' : 'Pendiente';
+  return `<div class="set locked"><span class="ss-tag">${tag}</span><span class="val" style="font-family:var(--f-body);font-size:15px">${txt}</span><span class="st">${st === 'rest' ? '🔒' : ''}</span></div>`;
+}
+
+function setRow(ex, i) {
+  const st = setState(ex, i);
+  if (st === 'done') {
+    const s = logged(ex.id)[i];
+    const cls = s.r < ex.rmin ? 'miss' : s.r > ex.rmax ? 'over' : '';
+    return `<button class="set done" data-act="edit" data-ex="${ex.id}" data-i="${i}">
+      <span class="idx">${i + 1}</span><span class="val">${kg(s.w)} <span class="muted" style="font-size:13px">${unit(ex)}</span> × <span class="${cls}">${s.r}</span>${s.rir != null ? ` <span class="muted" style="font-size:13px">RIR ${s.rir}</span>` : ''}</span><span class="tick">✓</span></button>`;
+  }
+  if (st === 'ready') return `<button class="set ready" data-act="log" data-ex="${ex.id}" data-i="${i}"><span class="idx">${i + 1}</span><span class="val">Registrar serie ${i + 1}</span><span class="st">›</span></button>`;
+  return `<div class="set locked"><span class="idx">${i + 1}</span><span class="val" style="font-family:var(--f-body);font-size:15px">${st === 'rest' ? 'Bloqueada: descanso en curso' : st === 'pair' ? 'Cerrá primero la serie anterior' : 'Pendiente'}</span><span class="st">${st === 'rest' ? '🔒' : ''}</span></div>`;
+}
+
+function effHTML(final) {
+  const a = A(); const d = DAY(a.day);
+  const e = efficiency(d, a.sets, final).value;
+  const pj = projectDuration(d, a.sets, a.startedAt, Date.now());
+  const cls = e >= 95 ? '' : e >= 85 ? 'eff-warn' : 'eff-bad';
+  return `<div class="${cls}"><div class="row between" style="font-size:13px;margin-bottom:4px"><span><span class="eyebrow">Eficiencia</span> <b class="num" style="font-size:15px">${nf.format(Math.round(e * 10) / 10)} %</b></span>
+    <span class="muted num" id="proj">${pj.done}/${pj.planned} series · fin ≈ ${Math.round(pj.projected / 60)} min${pj.projected > 3600 ? ' ⚠︎' : ''}</span></div><div class="effbar"><i style="width:${e}%"></i></div></div>`;
+}
+function paintTop() {
+  if (S.view !== 'session' || !S.active) return;
+  const w = $('#effwrap'); if (w && S.active.phase === 'train') w.innerHTML = effHTML(false);
+  const wk = $('#wake'); if (wk) wk.textContent = wake ? 'pantalla activa' : '';
+  tickText();
+}
+
+/* ---------- Cierre: semáforo ---------- */
+function viewFinish() {
+  const a = A(); const d = DAY(a.day);
+  const e = efficiency(d, a.sets, true).value;
+  const done = d.ex.filter(ex => logged(ex.id).length);
+  const missing = d.ex.reduce((s, ex) => s + Math.max(0, ex.sets - logged(ex.id).length), 0);
+  const tonnage = d.ex.reduce((s, ex) => s + logged(ex.id).reduce((t, x) => t + x.w * x.r * (ex.per ? 2 : 1), 0), 0);
+  return `
+  <div class="top"><div class="row"><button class="iconbtn" data-act="backtrain" aria-label="Volver a la sesión">‹</button>
+    <div class="grow"><div class="eyebrow">Cierre · Día ${d.n}</div><div class="disp" style="font-size:26px">Molestias articulares</div></div></div></div>
+  <div class="stack" style="margin-top:14px">
+    <div class="panel row" style="gap:18px;flex-wrap:wrap">
+      <div><div class="eyebrow">Eficiencia</div><div class="disp num" style="font-size:44px">${nf.format(Math.round(e * 10) / 10)}%</div></div>
+      <div><div class="eyebrow">Duración</div><div class="disp num" style="font-size:44px">${Math.round((Date.now() - a.startedAt) / 60000)}′</div></div>
+      <div><div class="eyebrow">Tonelaje</div><div class="disp num" style="font-size:44px">${nf.format(Math.round(tonnage))}</div></div>
+      ${missing ? `<div class="muted" style="font-size:14px;flex-basis:100%">${missing} serie${missing > 1 ? 's' : ''} sin registrar: cuentan como fallo completo.</div>` : ''}
+    </div>
+    <p class="muted" style="margin:0;font-size:15px">Marcá cada ejercicio. Verde: sin molestia. Amarillo: molestia leve. Rojo: dolor articular. Dos rojos en las últimas 3 sesiones sugieren cambiar a una variante en máquina.</p>
+    ${done.map(ex => { const f = a.fatigue[ex.id] || { c: 'v', j: [] }; return `
+      <div class="panel">
+        <div class="row"><span class="plate ${CAT[ex.cat].plate}" style="width:20px;height:20px;border-width:4px;box-shadow:none"></span><div class="grow" style="font-weight:600">${esc(exName(ex))}</div>
+        <div class="lights" role="group" aria-label="Molestia">${['v', 'a', 'r'].map(c => `<button class="${c}" data-act="light" data-ex="${ex.id}" data-c="${c}" aria-pressed="${f.c === c}" aria-label="${{ v: 'Verde', a: 'Amarillo', r: 'Rojo' }[c]}">${{ v: 'V', a: 'A', r: 'R' }[c]}</button>`).join('')}</div></div>
+        ${f.c !== 'v' ? `<div class="joints">${JOINTS.map(j => `<button data-act="joint" data-ex="${ex.id}" data-j="${j}" aria-pressed="${f.j.includes(j)}">${j}</button>`).join('')}</div>` : ''}
+      </div>`; }).join('')}
+    <button class="btn primary block" data-act="save">Guardar sesión</button>
+  </div>`;
+}
+
+/* ---------- Resultado ---------- */
+function viewResult() {
+  const r = S.result;
+  return `
+  <div class="top"><div class="disp brand">Sesión guardada<small>Día ${r.day} · ${r.minutes} min · eficiencia ${nf.format(r.efficiency)} %</small></div></div>
+  <div class="stack" style="margin-top:14px">
+    ${r.swaps.map(s => `<div class="panel stack" style="border-color:var(--red)">
+      <div><div class="eyebrow" style="color:var(--red)">Fatiga articular</div><div style="font-weight:700">${esc(s.name)}: 2 alertas rojas en las últimas 3 sesiones.</div>
+      <div class="muted" style="font-size:15px">Sugerencia: cambiar a <b>${esc(s.alt)}</b>. La carga se reinicia porque no se transfiere entre equipos.</div></div>
+      <button class="btn primary" data-act="swap" data-ex="${s.id}">Cambiar a la variante</button></div>`).join('')}
+    ${r.watch.length ? `<div class="panel"><div class="eyebrow">Vigilar</div><div style="font-size:15px">${r.watch.map(esc).join(' · ')}</div></div>` : ''}
+    ${r.prs.length ? `<div class="panel"><div class="eyebrow" style="color:var(--green)">Récords estimados</div>${r.prs.map(p => `<div class="row between" style="font-size:15px"><span>${esc(p.name)}</span><span class="num">e1RM ${kg(p.e)} kg</span></div>`).join('')}</div>` : ''}
+    <div class="panel"><div class="eyebrow">Prescripción para la próxima vez</div>
+      ${r.next.map(n => `<div class="prog-row"><div style="min-width:0"><div style="font-weight:600">${esc(n.name)}</div><div class="muted" style="font-size:13px">${esc(n.reason)}</div></div>
+        <span class="chip ${n.status}">${STATUS[n.status]}</span><span class="num" style="font-weight:600">${kg(n.w)}</span></div>`).join('')}</div>
+    <button class="btn block" data-act="home">Listo</button>
+  </div>`;
+}
+
+/* ---------- Progreso ---------- */
+function spark(id) {
+  const pts = S.sessions.slice().reverse().map(s => (s.exercises || []).find(e => e.id === id)).filter(e => e && e.e1rm > 0).map(e => e.e1rm);
+  if (pts.length < 2) return '<span class="muted" style="font-size:12px">—</span>';
+  const W = 72, H = 24, lo = Math.min(...pts), hi = Math.max(...pts), sp = hi - lo || 1;
+  const xy = pts.map((v, i) => [i / (pts.length - 1) * (W - 4) + 2, H - 3 - (v - lo) / sp * (H - 6)]);
+  const [lx, ly] = xy[xy.length - 1];
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-label="Tendencia de 1RM estimado"><polyline fill="none" stroke="var(--muted)" stroke-width="1.5" points="${xy.map(p => p.map(n => n.toFixed(1)).join(',')).join(' ')}"/><circle cx="${lx}" cy="${ly}" r="2.5" fill="var(--accent)"/></svg>`;
+}
+function viewHistory() {
+  const ss = S.sessions;
+  return `
+  <div class="top"><div class="row between"><div class="disp brand">Progreso<small>${ss.length} sesiones registradas</small></div>${storageBadge()}</div></div>
+  <div class="stack" style="margin-top:14px">
+    <div class="panel"><div class="eyebrow" style="margin-bottom:4px">Sesiones</div>
+      ${ss.length ? ss.slice(0, 60).map(s => `
+        <button class="hist-item" data-act="openh" data-id="${s.id}">
+          <div class="grow"><div style="font-weight:600">Día ${s.day} · ${DAY(s.day).focus}</div><div class="muted num" style="font-size:13px">${new Date(s.startedAt).toLocaleDateString('es-AR', { weekday: 'short', day: '2-digit', month: 'short' })} · ${s.minutes} min · ${nf.format(Math.round(s.tonnage))} kg</div></div>
+          <div class="num" style="font-weight:700;color:${s.efficiency >= 95 ? 'var(--green)' : s.efficiency >= 85 ? 'var(--yellow)' : 'var(--red)'}">${nf.format(s.efficiency)}%</div></button>
+        ${S.openHist === s.id ? `<div style="padding:8px 0 12px;font-size:14px">${s.exercises.map(e => `<div class="row between" style="padding:3px 0"><span class="grow">${esc(e.name)}${e.light && e.light !== 'v' ? ` <span class="chip ${e.light === 'r' ? 'down' : ''}">${e.light === 'r' ? 'rojo' : 'amarillo'}${e.joints && e.joints.length ? ' · ' + e.joints.join(', ') : ''}</span>` : ''}</span><span class="num muted">${e.sets.map(x => kg(x.w) + '×' + x.r).join('  ')}</span></div>`).join('')}</div>` : ''}`).join('')
+        : `<p class="muted" style="margin:6px 0 0">Todavía no hay sesiones. Al guardar la primera, acá vas a ver la eficiencia, el tonelaje y cada serie.</p>`}
+    </div>
+    ${DAYS.map(d => `<div class="panel"><div class="eyebrow">Día ${d.n} · ${d.focus}</div>
+      ${d.ex.map(ex => { const p = S.profile.prog[ex.id] || {}; const jl = jointAlert(S.profile.joint[ex.id]); return `
+        <div class="prog-row"><div style="min-width:0"><div style="font-weight:600;font-size:15px">${esc(exName(ex))}${jl.reds ? ` <span class="chip down">${jl.reds} rojo${jl.reds > 1 ? 's' : ''}</span>` : ''}</div>
+          <div class="muted num" style="font-size:13px">${p.w != null ? kg(p.w) + ' ' + unit(ex) : 'sin carga'}${p.target ? ' · obj. ' + p.target + ' reps' : ''}${S.profile.best[ex.id] ? ' · mejor e1RM ' + kg(Math.round(S.profile.best[ex.id] * 10) / 10) : ''}</div>
+          ${S.profile.swaps[ex.id] ? `<button class="btn ghost sm" style="margin-top:6px" data-act="unswap" data-ex="${ex.id}">Volver a ${esc(ex.name)}</button>` : ''}</div>
+          ${spark(ex.id)}<span class="chip ${p.status || 'new'}">${STATUS[p.status || 'new']}</span></div>`; }).join('')}</div>`).join('')}
+    <div class="panel stack"><div><div class="eyebrow">Backup</div><div class="muted" style="font-size:14px">Exportá todo a un archivo JSON. Sirve para pasar tus datos entre esta página y la versión instalada en el iPhone.</div></div>
+      <div class="row" style="flex-wrap:wrap"><button class="btn sm" data-act="export">Exportar JSON</button><button class="btn ghost sm" data-act="import">Importar JSON</button></div></div>
+  </div>`;
+}
+
+/* ---------------- Panel de descanso (anclado abajo) ---------------- */
+function renderRest() {
+  const r = S.active && S.active.rest;
+  if (S.view !== 'session' || !r || S.active.phase !== 'train') { restEl.innerHTML = ''; restEl.className = ''; app.style.paddingBottom = ''; return; }
+  app.style.paddingBottom = '300px';
+  const ex = EX[r.exId]; const ap = r.applied || {};
+  const sgHTML = (r.suggs || []).map(sg => {
+    const sx = EX[sg.exId], who = esc(exName(sx));
+    if (sg.type === 'low') return `<div class="sg">${who}: ${sg.deficit} rep${sg.deficit > 1 ? 's' : ''} bajo el mínimo.</div>
+      <div class="row" style="flex-wrap:wrap;gap:8px">
+        <button class="btn sm ${sg.primary === 'rest' ? 'primary' : ''}" data-act="add45" ${r.applied45 ? 'disabled' : ''}>${r.applied45 ? '+45 s aplicado' : '+45 s descanso'}</button>
+        <button class="btn sm ${sg.primary === 'load' ? 'primary' : ''}" data-act="applyw" data-ex="${sx.id}" data-w="${sg.wDown}" ${ap[sx.id] === sg.wDown ? 'disabled' : ''}>${ap[sx.id] === sg.wDown ? 'Carga ajustada' : `Bajar a ${kg(sg.wDown)} ${unit(sx)}`}</button></div>`;
+    return `<div class="sg">${who}: sobre el rango.</div><div class="row"><button class="btn sm primary" data-act="applyw" data-ex="${sx.id}" data-w="${sg.wUp}" ${ap[sx.id] === sg.wUp ? 'disabled' : ''}>${ap[sx.id] === sg.wUp ? 'Carga ajustada' : `Subir a ${kg(sg.wUp)} ${unit(sx)}`}</button></div>`;
+  }).join('');
+  const what = r.group ? 'Superserie A + B' : exName(ex);
+  restEl.className = 'rest' + (r.done ? ' over' : '');
+  restEl.innerHTML = `<div class="rest-in">
+    <div class="row between"><div><div class="eyebrow" style="color:inherit;opacity:.7" id="rest-label">${r.done ? 'Descanso cumplido' : 'Descanso'}</div><div class="big" id="rest-time">${mmss((r.endsAt - Date.now()) / 1000)}</div></div>
+      <div style="text-align:right;font-size:14px;max-width:48%">${r.done ? 'Serie siguiente desbloqueada' : 'Próxima serie bloqueada'}<br><span style="opacity:.75">${esc(what)}</span></div></div>
+    ${r.done ? '' : `<div class="rbar"><i id="rest-bar" style="width:0%"></i></div>`}
+    ${r.done ? '' : sgHTML}
+    <div class="row" style="gap:8px">${r.done ? `<button class="btn primary sm grow" data-act="dismiss">Seguir</button>` : `
+      <button class="btn sm" data-act="restadj" data-d="-15">−15 s</button><button class="btn sm" data-act="restadj" data-d="15">+15 s</button><button class="btn sm grow" data-act="skip">Saltar descanso</button>`}</div></div>`;
+  tickText();
+}
+
+/* Reloj: nunca cuenta, siempre compara con el reloj del sistema. */
+function tickText() {
+  const a = S.active; if (!a || S.view !== 'session') return;
+  const c = $('#clock'); if (c) c.textContent = mmss((Date.now() - a.startedAt) / 1000);
+  const r = a.rest; if (!r) return;
+  const left = (r.endsAt - Date.now()) / 1000;
+  const t = $('#rest-time'); if (t) t.textContent = r.done ? '+' + mmss(-left) : mmss(Math.ceil(left));
+  const b = $('#rest-bar'); if (b) b.style.width = Math.min(100, 100 * (1 - (r.endsAt - Date.now()) / r.total)) + '%';
+}
+function tick() {
+  const a = S.active; if (!a) return;
+  const r = a.rest;
+  if (r && !r.done && Date.now() >= r.endsAt) {
+    r.done = true; saveActive();
+    if (document.visibilityState === 'visible') beep();
+    if (S.view === 'session') { render(); restEl.classList.add('flash'); }
+    return;
+  }
+  tickText();
+}
+setInterval(tick, 250);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { tick(); keepAwake(); if (S.view === 'session') render(); } });
+window.addEventListener('pageshow', () => { tick(); });
+
+/* ---------------- Hoja de registro de serie ---------------- */
+function renderSheet() {
+  if (S.confirm) {
+    sheetEl.innerHTML = `<div class="scrim" data-act="cancelc"><div class="sheet" data-stop="1"><div class="sheet-in">
+      <h3 style="font-size:20px">${esc(S.confirm.title)}</h3><p class="muted" style="margin:0">${esc(S.confirm.body)}</p>
+      <div class="row"><button class="btn ghost grow" data-act="cancelc">Cancelar</button><button class="btn primary grow" data-act="okc">${esc(S.confirm.ok)}</button></div></div></div></div>`;
+    return;
+  }
+  const sh = S.sheet; if (!sh) { sheetEl.innerHTML = ''; return; }
+  const ex = EX[sh.exId]; const isLast = sh.idx === ex.sets - 1;
+  if (sh.rirOnly) {
+    sheetEl.innerHTML = `<div class="scrim" data-act="closesheet"><div class="sheet" data-stop="1" role="dialog" aria-label="Repeticiones en reserva"><div class="sheet-in">
+      <div><div class="eyebrow">Última serie · ${esc(exName(ex))}</div><div class="num" style="font-size:22px;font-weight:600;margin-top:4px">${kg(sh.w)} ${unit(ex)} × ${sh.r}</div></div>
+      <div><div class="eyebrow" style="margin-bottom:6px">¿Cuántas reps más podías sacar? (RIR)</div>
+      <div class="rirs">${[0, 1, 2, 3, 4].map(n => `<button data-act="rirsave" data-n="${n}">${n === 4 ? '4+' : n}</button>`).join('')}</div>
+      <div class="muted" style="font-size:13px;margin-top:6px">RIR ≥ 2 fuerza el aumento de carga de este ejercicio en la próxima sesión.</div></div>
+    </div></div></div>`;
+    return;
+  }
+  const canSave = sh.w !== '' && sh.w >= 0 && sh.r >= 0 && (!isLast || sh.rir != null);
+  sheetEl.innerHTML = `<div class="scrim" data-act="closesheet"><div class="sheet" data-stop="1" role="dialog" aria-label="Registrar serie"><div class="sheet-in">
+    <div class="row between"><div><div class="eyebrow">${sh.edit ? 'Editar' : 'Serie'} ${sh.idx + 1} de ${ex.sets}${ex.uni ? ' · pierna más débil' : ''}</div><div style="font-weight:700;font-size:18px">${esc(exName(ex))}</div></div><span class="num muted">${ex.rmin}–${ex.rmax} reps</span></div>
+    <div><div class="eyebrow" style="margin-bottom:6px">Carga (${unit(ex)})</div>
+      <div class="stepper"><button data-act="w" data-d="-1" aria-label="Menos carga">−</button><input id="in-w" inputmode="decimal" autocomplete="off" value="${sh.w === '' ? '' : String(sh.w).replace('.', ',')}" placeholder="kg" aria-label="Carga en kilos"><button data-act="w" data-d="1" aria-label="Más carga">+</button></div>
+      <div class="muted" style="font-size:12px;margin-top:4px">Paso de ${kg(ex.inc)} kg</div></div>
+    <div><div class="eyebrow" style="margin-bottom:6px">Repeticiones al fallo</div>
+      <div class="stepper"><button data-act="r" data-d="-1" aria-label="Menos repeticiones">−</button><input id="in-r" inputmode="numeric" autocomplete="off" value="${sh.r}" aria-label="Repeticiones"><button data-act="r" data-d="1" aria-label="Más repeticiones">+</button></div></div>
+    ${isLast ? `<div><div class="eyebrow" style="margin-bottom:6px">¿Cuántas reps más podías sacar? (RIR)</div>
+      <div class="rirs">${[0, 1, 2, 3, 4].map(n => `<button data-act="rir" data-n="${n}" aria-pressed="${sh.rir === n}">${n === 4 ? '4+' : n}</button>`).join('')}</div>
+      ${sh.rir >= 2 ? `<div style="font-size:13px;margin-top:6px;color:var(--green)">RIR ≥ 2: la próxima sesión sube la carga.</div>` : ''}</div>` : ''}
+    <button class="btn primary block" data-act="saveset" ${canSave ? '' : 'disabled'}>${sh.edit ? 'Guardar cambios' : 'Serie hecha · iniciar descanso'}</button>
+  </div></div></div>`;
+}
+function parseNum(v) { v = String(v).replace(',', '.').trim(); if (v === '') return ''; const n = Number(v); return Number.isFinite(n) ? n : ''; }
+
+/* ---------------- Acciones ---------------- */
+function startSession(n) {
+  unlockAudio();
+  S.draft = {};
+  S.active = { id: 's' + Date.now(), rv: ROUTINE, day: n, startedAt: Date.now(), updatedAt: Date.now(), phase: 'train', sets: {}, nextW: {}, rest: null, fatigue: {} };
+  saveActive(); S.view = 'session'; render(); keepAwake(); window.scrollTo(0, 0);
+}
+function saveSet() {
+  const sh = S.sheet, a = S.active, ex = EX[sh.exId];
+  const set = { w: sh.w === '' ? 0 : sh.w, r: Math.max(0, Math.round(sh.r)) };
+  if (sh.rir != null) set.rir = sh.rir;
+  S.sheet = null;
+  if (sh.edit) { const old = a.sets[ex.id][sh.idx]; a.sets[ex.id][sh.idx] = { ...old, ...set, t: old.t }; saveActive(); render(); return; }
+  commitSet(ex, set);
+}
+/* Registra una serie en el historial de SU ejercicio y decide el descanso.
+   Superserie: A_n no dispara descanso; recién A_n + B_n disparan el descanso enlazado. */
+function commitSet(ex, set) {
+  const a = S.active, d = DAY(a.day);
+  set.t = Date.now();
+  a.sets[ex.id] = a.sets[ex.id] || [];
+  a.sets[ex.id].push(set);
+  delete a.nextW[ex.id];
+  delete S.draft[ex.id + ':' + (a.sets[ex.id].length - 1)];
+  const e = e1rm(set.w, set.r, set.rir || 0);
+  if (e > (S.profile.best[ex.id] || 0) && S.profile.best[ex.id]) toast(`Récord estimado: e1RM ${kg(Math.round(e * 10) / 10)} kg`);
+  const ra = restAfter(d, ex, a.sets);
+  if (ra.rest === 0 && ra.next) {
+    a.rest = null; toast(`Sin descanso: seguí con ${exName(ra.next)}`);
+  } else if (d.ex.every(x => logged(x.id).length >= x.sets)) {
+    a.rest = null; toast('Última serie del día. Cerrá la sesión.');
+  } else {
+    const now = Date.now();
+    const members = ex.g ? d.ex.filter(m => m.g === ex.g) : [ex];
+    const suggs = members.map(m => {
+      const l = logged(m.id), last = l[l.length - 1];
+      if (!last || l.length >= m.sets) return null;
+      const sg = suggestAfterSet(m, last);
+      return sg.type === 'low' || sg.type === 'high' ? { exId: m.id, ...sg } : null;
+    }).filter(Boolean);
+    a.rest = { startedAt: now, endsAt: now + ra.rest * 1000, total: ra.rest * 1000, exId: ex.id, group: ex.g || null, suggs, applied: {}, done: false };
+  }
+  saveActive(); unlockAudio(); render();
+}
+function finishSave() {
+  const a = S.active, d = DAY(a.day), P = S.profile, now = Date.now();
+  const res = { day: a.day, minutes: Math.round((now - a.startedAt) / 60000), efficiency: Math.round(efficiency(d, a.sets, true).value * 10) / 10, next: [], swaps: [], watch: [], prs: [] };
+  const exercises = [];
+  let tonnage = 0;
+  for (const ex of d.ex) {
+    const l = logged(ex.id);
+    const pr = nextPrescription(ex, l, P.prog[ex.id]);
+    if (l.length) {
+      P.prog[ex.id] = { w: pr.w, target: pr.target, status: pr.status, miss: pr.miss, reason: pr.reason };
+      const f = a.fatigue[ex.id] || { c: 'v', j: [] };
+      P.joint[ex.id] = [...(P.joint[ex.id] || []), f.c].slice(-3);
+      const ja = jointAlert(P.joint[ex.id]);
+      if (ja.swap && !P.swaps[ex.id]) res.swaps.push({ id: ex.id, name: exName(ex), alt: ex.alt });
+      else if (ja.watch) res.watch.push(exName(ex));
+      const best = Math.max(...l.map((s, i) => e1rm(s.w, s.r, i === l.length - 1 ? (s.rir || 0) : 0)));
+      if (best > (P.best[ex.id] || 0)) { if (P.best[ex.id]) res.prs.push({ name: exName(ex), e: Math.round(best * 10) / 10 }); P.best[ex.id] = best; }
+      tonnage += l.reduce((t, x) => t + x.w * x.r * (ex.per ? 2 : 1), 0);
+      exercises.push({ id: ex.id, name: exName(ex), cat: ex.cat, ss: ex.g || null, sets: l, e1rm: Math.round(best * 10) / 10, light: f.c, joints: f.j });
+      res.next.push({ name: exName(ex), w: pr.w, status: pr.status, reason: pr.reason });
+    }
+  }
+  P.lastDay = a.day;
+  const session = { id: a.id, day: a.day, startedAt: a.startedAt, endedAt: now, minutes: res.minutes, efficiency: res.efficiency, tonnage: Math.round(tonnage), exercises };
+  S.sessions = [session, ...S.sessions.filter(s => s.id !== session.id)];
+  saveProfile(); Store.addSession(session);
+  S.active = null; Store.put('active', null); releaseAwake();
+  S.result = res; S.view = 'result'; render(); window.scrollTo(0, 0);
+}
+async function doExport() {
+  const data = JSON.stringify({ app: 'bitacora-onori', v: 1, exportedAt: new Date().toISOString(), profile: S.profile, sessions: S.sessions }, null, 1);
+  const filename = 'bitacora-onori-' + new Date().toISOString().slice(0, 10) + '.json';
+  if (Store.dl) { try { await Store.dl.save({ filename, data }); toast('Backup exportado'); } catch (e) { if (e && e.code !== 'declined') toast('No se pudo exportar el archivo.'); } return; }
+  try { const u = URL.createObjectURL(new Blob([data], { type: 'application/json' })); const l = document.createElement('a'); l.href = u; l.download = filename; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
+  catch (e) { toast('Este visor no permite descargar archivos.'); }
+}
+$('#importFile').addEventListener('change', ev => {
+  const f = ev.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const j = JSON.parse(rd.result);
+      if (j.app !== 'bitacora-onori' || !j.profile || !Array.isArray(j.sessions)) throw 0;
+      S.confirm = { title: 'Importar backup', body: `${j.sessions.length} sesiones. Reemplaza las cargas y prescripciones actuales; las sesiones se suman.`, ok: 'Importar', act: async () => {
+        S.profile = j.profile; saveProfile();
+        for (const s of j.sessions) await Store.addSession(s);
+        S.sessions = await Store.listSessions(); toast('Backup importado'); render();
+      } };
+      renderSheet();
+    } catch (e) { toast('El archivo no es un backup de la bitácora.'); }
+    ev.target.value = '';
+  };
+  rd.readAsText(f);
+});
+
+document.addEventListener('input', ev => {
+  const k = ev.target.dataset && ev.target.dataset.draft;
+  if (k) { const v = parseNum(ev.target.value); S.draft[k] = S.draft[k] || { w: '', r: 0 }; S.draft[k][ev.target.dataset.f] = ev.target.dataset.f === 'r' ? (v === '' ? '' : v) : v; return; }
+  if (!S.sheet) return;
+  if (ev.target.id === 'in-w') { S.sheet.w = parseNum(ev.target.value); refreshSaveBtn(); }
+  if (ev.target.id === 'in-r') { const n = parseNum(ev.target.value); S.sheet.r = n === '' ? 0 : n; refreshSaveBtn(); }
+});
+function refreshSaveBtn() {
+  const sh = S.sheet, ex = EX[sh.exId], isLast = sh.idx === ex.sets - 1;
+  const b = sheetEl.querySelector('[data-act="saveset"]'); if (b) b.disabled = !(sh.w !== '' && sh.w >= 0 && sh.r >= 0 && (!isLast || sh.rir != null));
+}
+
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-act]');
+  if (!el) return;
+  if (el.classList.contains('scrim') && ev.target.closest('[data-stop]')) return;
+  const act = el.dataset.act, a = S.active;
+  switch (act) {
+    case 'tab': S.view = el.dataset.v; render(); window.scrollTo(0, 0); break;
+    case 'home': S.view = 'home'; S.result = null; render(); window.scrollTo(0, 0); break;
+    case 'resume': S.view = 'session'; unlockAudio(); render(); keepAwake(); break;
+    case 'start':
+      if (a) { toast('Ya hay una sesión en curso.'); break; }
+      startSession(+el.dataset.n); break;
+    case 'log': {
+      const ex = EX[el.dataset.ex], i = +el.dataset.i;
+      if (setState(ex, i) !== 'ready') break;
+      const p = prefill(ex, i);
+      S.sheet = { exId: ex.id, idx: i, w: p.w, r: p.r, rir: null, edit: false }; renderSheet(); break; }
+    case 'edit': {
+      const ex = EX[el.dataset.ex], i = +el.dataset.i, s = logged(ex.id)[i];
+      S.sheet = { exId: ex.id, idx: i, w: s.w, r: s.r, rir: s.rir != null ? s.rir : (i === ex.sets - 1 ? 0 : null), edit: true }; renderSheet(); break; }
+    case 'w': { const ex = EX[S.sheet.exId]; const cur = S.sheet.w === '' ? 0 : S.sheet.w; S.sheet.w = Math.max(0, Math.round((cur + (+el.dataset.d) * ex.inc) * 100) / 100); renderSheet(); break; }
+    case 'r': S.sheet.r = Math.max(0, (S.sheet.r || 0) + (+el.dataset.d)); renderSheet(); break;
+    case 'rir': S.sheet.rir = +el.dataset.n; renderSheet(); break;
+    case 'saveset': saveSet(); break;
+    case 'ssdone': {
+      const ex = EX[el.dataset.ex], i = +el.dataset.i;
+      if (setState(ex, i) !== 'ready') break;
+      const dr = S.draft[ex.id + ':' + i] || prefill(ex, i);
+      if (dr.w === '' || dr.r === '' || !(dr.r >= 0)) { toast('Completá la carga y las reps.'); break; }
+      const set = { w: dr.w, r: Math.max(0, Math.round(dr.r)) };
+      if (i === ex.sets - 1) { S.sheet = { exId: ex.id, idx: i, w: set.w, r: set.r, rir: null, rirOnly: true }; renderSheet(); break; }
+      commitSet(ex, set); break; }
+    case 'rirsave': { const sh = S.sheet; S.sheet = null; commitSet(EX[sh.exId], { w: sh.w, r: sh.r, rir: +el.dataset.n }); break; }
+    case 'closesheet': S.sheet = null; renderSheet(); break;
+    case 'add45': a.rest.endsAt += 45000; a.rest.total += 45000; a.rest.applied45 = true; saveActive(); renderRest(); break;
+    case 'applyw': { const id = el.dataset.ex; a.nextW[id] = +el.dataset.w; a.rest.applied = a.rest.applied || {}; a.rest.applied[id] = +el.dataset.w;
+      for (const k in S.draft) if (k.startsWith(id + ':')) delete S.draft[k];
+      saveActive(); render(); break; }
+    case 'restadj': { const d = +el.dataset.d * 1000; a.rest.endsAt = Math.max(Date.now(), a.rest.endsAt + d); a.rest.total = Math.max(1000, a.rest.total + d); saveActive(); tick(); tickText(); break; }
+    case 'skip': a.rest.endsAt = Date.now(); a.rest.done = true; saveActive(); render(); break;
+    case 'dismiss': a.rest = null; saveActive(); render(); break;
+    case 'finish': a.phase = 'finish'; a.rest = null; saveActive(); render(); window.scrollTo(0, 0); break;
+    case 'backtrain': a.phase = 'train'; saveActive(); render(); break;
+    case 'light': { const f = a.fatigue[el.dataset.ex] = a.fatigue[el.dataset.ex] || { c: 'v', j: [] }; f.c = el.dataset.c; if (f.c === 'v') f.j = []; saveActive(); render(); break; }
+    case 'joint': { const f = a.fatigue[el.dataset.ex]; const j = el.dataset.j; f.j = f.j.includes(j) ? f.j.filter(x => x !== j) : [...f.j, j]; saveActive(); render(); break; }
+    case 'save': finishSave(); break;
+    case 'discard': S.confirm = { title: 'Descartar sesión', body: 'Se borran las series de hoy. Las cargas de la próxima sesión no cambian.', ok: 'Descartar', act: () => { S.active = null; Store.put('active', null); releaseAwake(); S.view = 'home'; render(); } }; renderSheet(); break;
+    case 'okc': { const c = S.confirm; S.confirm = null; renderSheet(); c && c.act(); break; }
+    case 'cancelc': S.confirm = null; renderSheet(); break;
+    case 'swap': { const ex = EX[el.dataset.ex]; S.profile.swaps[ex.id] = ex.alt; S.profile.prog[ex.id] = { w: null, status: 'new', reason: 'Variante nueva: buscá la carga de referencia.' }; S.profile.joint[ex.id] = []; saveProfile(); S.result.swaps = S.result.swaps.filter(s => s.id !== ex.id); toast('Variante aplicada desde la próxima sesión'); render(); break; }
+    case 'unswap': { const ex = EX[el.dataset.ex]; delete S.profile.swaps[ex.id]; S.profile.prog[ex.id] = { w: null, status: 'new', reason: 'Volviste al ejercicio original.' }; saveProfile(); render(); break; }
+    case 'openh': S.openHist = S.openHist === el.dataset.id ? null : el.dataset.id; render(); break;
+    case 'export': doExport(); break;
+    case 'import': $('#importFile').click(); break;
+  }
+});
+
+/* ---------------- Arranque ---------------- */
+/* Una sesión activa de la rutina anterior no se retoma: sus ejercicios ya no existen. */
+function freshActive(a) {
+  if (!a || a.rv === ROUTINE) return a || null;
+  if (Object.values(a.sets || {}).some(x => x.length)) toast('Se cerró una sesión de la rutina anterior sin guardar.');
+  lsSet('active', null);
+  return null;
+}
+(async function boot() {
+  S.profile = lsGet('profile') || defaultProfile();
+  S.active = freshActive(lsGet('active'));
+  S.sessions = lsGet('sessions') || [];
+  if (S.active) S.view = 'session';
+  render();
+  if (S.active) keepAwake();
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+  if (await Store.connect()) {
+    const [p, act, ss] = await Promise.all([Store.get('profile'), Store.get('active'), Store.listSessions()]);
+    if (p) S.profile = p;
+    S.active = freshActive(act); S.sessions = ss;
+    if (act && !S.active) Store.put('active', null);
+    if (S.active && S.view === 'home') S.view = 'session';
+    if (!S.active && S.view === 'session') S.view = 'home';
+    if (S.active) Store.put('active', S.active);
+    render();
+  }
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
