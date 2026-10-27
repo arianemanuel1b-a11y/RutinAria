@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Onori">
-<meta name="theme-color" content="#141312">
+<meta name="theme-color" content="#efede9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141312" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
@@ -147,6 +147,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .stepper input{width:100%;height:64px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);text-align:center;font-family:var(--f-mono);font-size:30px;font-weight:600}
 .rirs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .rirs button{height:52px;border-radius:10px;background:var(--sunk);font-family:var(--f-mono);font-size:20px;font-weight:600}
+.rirs button.tgt{box-shadow:inset 0 0 0 2px var(--green)}
 .rirs button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
 .lights{display:flex;gap:6px}
 .lights button{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:var(--sunk);font-size:13px;font-weight:700}
@@ -206,7 +207,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script>
 /* =====================================================================
    BITÁCORA ONORI — Motor lógico (funciones puras, sin DOM)
-   Rutina: Recomposición corporal · Método H. Onori · 4 días Torso/Piernas
+   Rutina: Hipertrofia revisada · prioridad espalda, hombros y brazos · 4 días
    ===================================================================== */
 
 /* Categorías. k = peso del fallo en el algoritmo de eficiencia.
@@ -224,42 +225,44 @@ const MUSCLES = {
 
 /* X(id, nombre, series, repsMin, repsMax, descanso s, categoría, incremento kg, opciones)
    per: el peso se registra por mancuerna · uni: unilateral (c/p) · g: superserie
-   mus: músculos (1 = directo, 0.5 = indirecto) · alt: variante en máquina */
+   mus: músculos (1 = directo, 0.5 = indirecto) · alt: variante en máquina
+   kind: 'comp' (compuesto: RIR 1–2) o 'iso' (aislamiento: cerca del fallo, fallo solo en la última) */
 function X(id, name, sets, rmin, rmax, rest, cat, inc, o = {}) {
-  return { id, name, sets, rmin, rmax, rest, cat, inc, per: false, uni: false, g: null, note: '', mus: {}, alt: '', ...o };
+  return { id, name, sets, rmin, rmax, rest, cat, inc, kind: 'iso', per: false, uni: false, g: null, note: '', mus: {}, alt: '', ...o };
 }
 
 /* Versión de rutina: una sesión activa de otra versión no se retoma. */
-const ROUTINE = 'onori-brazos-2026-10';
+const ROUTINE = 'hipertrofia-revisada-2026-10';
 
 const DAYS = [
-  { n: 1, title: 'Torso', focus: 'Pecho, espalda y hombro', ex: [
-    X('d1_pbarra', 'Press plano con barra', 3, 6, 8, 180, 'b', 2.5, { mus: { pecho: 1, triceps: .5, hombros: .5 }, alt: 'Press de pecho en máquina' }),
-    X('d1_jalon', 'Jalón al pecho (polea alta)', 3, 8, 10, 180, 'b', 2.5, { mus: { espalda: 1, biceps: .5 }, alt: 'Jalón en máquina convergente' }),
-    X('d1_militar', 'Press militar sentado con mancuernas', 3, 8, 10, 180, 'b', 2, { per: true, mus: { hombros: 1, triceps: .5 }, alt: 'Press de hombros en máquina' }),
-    X('d1_gironda', 'Remo en polea baja (Gironda)', 2, 10, 12, 120, 's', 2.5, { note: 'Semipesado, bilateral.', mus: { espalda: 1, biceps: .5 }, alt: 'Remo en máquina con pecho apoyado' }),
-    X('d1_cruce', 'Cruce de poleas', 2, 12, 15, 90, 'a', 2.5, { note: 'Excéntrica lenta.', mus: { pecho: 1 }, alt: 'Aperturas en máquina (peck deck)' }),
+  { n: 1, title: 'Torso', focus: 'Pecho, espalda y hombros', ex: [
+    X('d1_pbarra', 'Press plano con barra', 3, 6, 8, 180, 'b', 2.5, { kind: 'comp', note: 'Básico pesado; técnica controlada.', mus: { pecho: 1, triceps: .5, hombros: .5 }, alt: 'Press de pecho en máquina' }),
+    X('d1_jalon', 'Jalón al pecho en polea alta', 3, 8, 10, 150, 'b', 2.5, { kind: 'comp', note: 'Recorrido completo, sin balanceo.', mus: { espalda: 1, biceps: .5 }, alt: 'Jalón en máquina convergente' }),
+    X('d1_militar', 'Press militar sentado con mancuernas', 3, 8, 10, 180, 'b', 2, { kind: 'comp', per: true, note: 'No forzar una posición lumbar incómoda.', mus: { hombros: 1, triceps: .5 }, alt: 'Press de hombros en máquina' }),
+    X('d1_gironda', 'Remo en polea baja (Gironda)', 2, 10, 12, 120, 's', 2.5, { kind: 'comp', note: 'Bilateral; torso estable.', mus: { espalda: 1, biceps: .5 }, alt: 'Remo en máquina con pecho apoyado' }),
+    X('d1_cruce', 'Cruce de poleas para pecho', 2, 12, 15, 90, 'a', 2.5, { note: 'Aislamiento; excéntrica controlada.', mus: { pecho: 1 }, alt: 'Aperturas en máquina (peck deck)' }),
   ]},
   { n: 2, title: 'Piernas + bíceps', focus: 'Piernas corto + bíceps pesado', ex: [
-    X('d2_sent', 'Sentadilla (hack o libre)', 3, 6, 8, 180, 'b', 5, { mus: { cuad: 1, gluteos: .5 }, alt: 'Sentadilla péndulo' }),
+    X('d2_sent', 'Sentadilla (hack o libre)', 3, 6, 8, 180, 'b', 5, { kind: 'comp', note: 'Mantené la variante que mejor toleres.', mus: { cuad: 1, gluteos: .5 }, alt: 'Sentadilla péndulo' }),
     X('d2_sillon', 'Sillón de cuádriceps', 3, 12, 15, 90, 'a', 5, { note: 'Pausa de 1 s arriba.', mus: { cuad: 1 }, alt: 'Sillón unilateral, rango controlado' }),
-    X('d2_isquios', 'Curl de isquios (acostado o sentado)', 3, 8, 10, 120, 'b', 5, { note: 'Pesado: reemplaza el estímulo posterior.', mus: { isquios: 1 }, alt: 'Curl de isquios sentado' }),
-    X('d2_curlbi', 'Curl de bíceps (mancuernas o barra)', 3, 6, 8, 150, 'b', 2, { note: 'Básico pesado de brazos. Registrá siempre con el mismo criterio (barra total o kg por mancuerna).', mus: { biceps: 1 }, alt: 'Curl de bíceps en máquina' }),
+    X('d2_isquios', 'Curl de isquios (acostado o sentado)', 3, 8, 10, 120, 's', 5, { note: 'Controlá la fase de bajada.', mus: { isquios: 1 }, alt: 'Curl de isquios sentado' }),
+    X('d2_curlbi', 'Curl de bíceps (mancuernas o barra)', 3, 6, 8, 150, 'b', 2, { note: 'Sin impulso del tronco. Registrá siempre con el mismo criterio (barra total o kg por mancuerna).', mus: { biceps: 1 }, alt: 'Curl de bíceps en máquina' }),
     X('d2_martillo', 'Curl martillo con mancuernas', 2, 10, 12, 90, 'a', 2, { per: true, note: 'Foco en braquial y antebrazo.', mus: { biceps: 1 }, alt: 'Curl martillo en polea con cuerda' }),
   ]},
-  { n: 3, title: 'Torso', focus: 'Espalda, pecho y tríceps pesado', ex: [
-    X('d3_remo', 'Remo con barra (bilateral)', 3, 6, 8, 180, 'b', 2.5, { mus: { espalda: 1, biceps: .5 }, alt: 'Remo en máquina con pecho apoyado' }),
-    X('d3_incl', 'Press inclinado con mancuernas', 3, 6, 8, 180, 'b', 2, { per: true, mus: { pecho: 1, triceps: .5, hombros: .5 }, alt: 'Press inclinado en máquina' }),
-    X('d3_lat', 'Elevaciones laterales (polea)', 3, 10, 12, 90, 'a', 2.5, { note: 'Aislamiento al fallo.', mus: { hombros: 1 }, alt: 'Vuelos laterales en máquina' }),
-    X('d3_frances', 'Press francés o copa a 2 manos', 3, 8, 10, 150, 'b', 2, { note: 'Básico pesado de brazos.', mus: { triceps: 1 }, alt: 'Extensión de tríceps en máquina' }),
-    X('d3_soga', 'Tríceps en polea (soga)', 2, 12, 15, 90, 'a', 2.5, { note: 'Apertura de la soga al final.', mus: { triceps: 1 }, alt: 'Extensión de tríceps en máquina' }),
+  { n: 3, title: 'Torso', focus: 'Espalda, pecho, hombros y tríceps', ex: [
+    X('d3_remo', 'Remo con barra (bilateral)', 3, 6, 8, 180, 'b', 2.5, { kind: 'comp', note: 'Solo con el tronco estable y sin molestias; alternativa: remo con pecho apoyado.', mus: { espalda: 1, biceps: .5 }, alt: 'Remo con pecho apoyado' }),
+    X('d3_jalneutro', 'Jalón al pecho con agarre neutro', 2, 10, 12, 120, 's', 2.5, { kind: 'comp', note: 'Suma volumen de espalda sin duplicar el remo.', mus: { espalda: 1, biceps: .5 }, alt: 'Jalón en máquina, agarre neutro' }),
+    X('d3_incl', 'Press inclinado con mancuernas', 3, 6, 8, 180, 'b', 2, { kind: 'comp', per: true, note: 'Básico pesado.', mus: { pecho: 1, triceps: .5, hombros: .5 }, alt: 'Press inclinado en máquina' }),
+    X('d3_lat', 'Elevaciones laterales en polea', 3, 10, 15, 90, 'a', 2.5, { note: 'Controlá el recorrido.', mus: { hombros: 1 }, alt: 'Vuelos laterales en máquina' }),
+    X('d3_inversas', 'Aperturas inversas en máquina o polea', 3, 12, 15, 90, 'a', 2.5, { note: 'Deltoides posterior.', mus: { hombros: 1 }, alt: 'Aperturas inversas en máquina' }),
+    X('d3_frances', 'Press francés o extensión por encima de la cabeza (copa)', 3, 8, 12, 150, 'b', 2, { note: 'Elegí la variante más cómoda para codos y hombros.', mus: { triceps: 1 }, alt: 'Extensión de tríceps en máquina' }),
   ]},
   { n: 4, title: 'Posterior + brazos', focus: 'Cadena posterior + remate de brazos', ex: [
-    X('d4_bulg', 'Estocadas búlgaras con mancuernas', 3, 10, 12, 150, 'b', 2, { per: true, uni: true, note: 'Por pierna. Registrá la pierna más débil.', mus: { cuad: 1, gluteos: 1 }, alt: 'Prensa unilateral' }),
+    X('d4_bulg', 'Estocadas búlgaras con mancuernas', 3, 10, 12, 150, 'b', 2, { kind: 'comp', per: true, uni: true, note: 'Por pierna. Registrá la pierna más débil.', mus: { cuad: 1, gluteos: 1 }, alt: 'Prensa unilateral' }),
     X('d4_sillon', 'Sillón de cuádriceps', 3, 12, 15, 90, 'a', 5, { note: 'Pausa de 1 s arriba.', mus: { cuad: 1 }, alt: 'Sillón unilateral, rango controlado' }),
-    X('d4_gem', 'Elevación de talones', 4, 12, 15, 90, 'a', 5, { note: 'Sostener 2 s la contracción máxima.', mus: { gemelos: 1 }, alt: 'Gemelos en prensa' }),
+    X('d4_gem', 'Elevación de talones', 4, 12, 15, 90, 'a', 5, { note: 'Sostené 2 s la contracción máxima.', mus: { gemelos: 1 }, alt: 'Gemelos en prensa' }),
     X('d4_curlpolea', 'Curl de bíceps en polea', 3, 12, 15, 90, 'a', 2.5, { g: 'd4SS', mus: { biceps: 1 }, alt: 'Curl de bíceps en máquina' }),
-    X('d4_extri', 'Extensión de tríceps en polea', 3, 12, 15, 90, 'a', 2.5, { g: 'd4SS', mus: { triceps: 1 }, alt: 'Extensión de tríceps en máquina' }),
+    X('d4_extri', 'Extensión de tríceps con soga', 3, 12, 15, 90, 'a', 2.5, { g: 'd4SS', mus: { triceps: 1 }, alt: 'Extensión de tríceps en máquina' }),
   ]},
 ];
 
@@ -287,50 +290,73 @@ function boundedIncrease(w0, target, inc) {
 }
 
 /* =====================================================================
-   1) AUTORREGULACIÓN INTRA-SESIÓN (después de cada serie)
+   0) RIR OBJETIVO POR SERIE
+   Compuestos: 1–2 en reserva en todas las series.
+   Aislamientos: cerca del fallo técnico (RIR 1); el fallo (RIR 0) solo en la última serie.
    ===================================================================== */
-function suggestAfterSet(ex, set) {
+function rirTarget(ex, idx) {
+  if (ex.kind === 'comp') return [1, 2];
+  return idx === ex.sets - 1 ? [0, 1] : [1, 1];
+}
+const rirLabel = ([lo, hi]) => (lo === hi ? `RIR ${lo}` : `RIR ${lo}–${hi}`);
+/* Capacidad de la serie = reps hechas + reps en reserva. */
+const setE1 = s => e1rm(s.w, s.r, Number.isFinite(s.rir) ? s.rir : 0);
+
+/* =====================================================================
+   1) AUTORREGULACIÓN INTRA-SESIÓN (después de cada serie)
+   Orden: reps bajo el rango → reps sobre el rango → serie demasiado fácil (RIR alto)
+          → serie demasiado dura (RIR bajo) → en objetivo.
+   ===================================================================== */
+function suggestAfterSet(ex, set, idx = 0) {
   const { w, r } = set;
   if (!(w > 0)) return { type: 'none' };
+  const rir = Number.isFinite(set.rir) ? set.rir : null;
+  const [lo, hi] = rirTarget(ex, idx);
   if (r < ex.rmin) {
     const d = ex.rmin - r;
-    // Caída de carga necesaria para llegar a rmin con el 1RM de esta serie, acotada a 5–10 %.
-    const raw = 1 - (1 + r / 30) / (1 + ex.rmin / 30);
+    // Caída de carga necesaria para llegar a rmin con la capacidad de esta serie, acotada a 5–10 %.
+    const raw = 1 - (1 + (r + (rir || 0)) / 30) / (1 + (ex.rmin + lo) / 30);
     const pct = clamp(raw, 0.05, 0.10);
     let wd = roundInc(w * (1 - pct), ex.inc);
     if (wd >= w) wd = r2(w - ex.inc);
     return { type: 'low', deficit: d, pct, wDown: Math.max(0, wd), addRest: 45, primary: d === 1 ? 'rest' : 'load' };
   }
-  if (r > ex.rmax) {
-    const wUp = boundedIncrease(w, loadFor(e1rm(w, r), ex.rmin), ex.inc);
-    return { type: 'high', surplus: r - ex.rmax, wUp };
-  }
+  const nextTarget = rirTarget(ex, Math.min(idx + 1, ex.sets - 1));
+  // Carga para la próxima serie: la que deja las mismas reps (dentro del rango) con el RIR alto del objetivo.
+  const upTo = () => boundedIncrease(w, loadFor(setE1(set), clamp(r, ex.rmin, ex.rmax) + nextTarget[1]), ex.inc);
+  if (r > ex.rmax) return { type: 'high', surplus: r - ex.rmax, wUp: upTo() };
+  if (rir != null && rir > hi) return { type: 'easy', rir, target: [lo, hi], wUp: upTo() };
+  if (rir != null && rir < lo) return { type: 'hard', rir, target: [lo, hi] };
   return { type: 'ok' };
 }
 
 /* =====================================================================
-   2) PROGRESIÓN ENTRE SESIONES (doble progresión + RIR + estancamiento)
-   prev = estado previo del ejercicio en el perfil
+   2) PROGRESIÓN ENTRE SESIONES (doble progresión guiada por RIR)
    ===================================================================== */
 function nextPrescription(ex, sets, prev) {
   prev = prev || {};
   const done = sets.filter(s => s.w > 0);
   if (!done.length) return { ...prev, status: prev.w ? 'hold' : 'new', reason: 'Sin series registradas.' };
-  const first = done[0];
-  const last = done[done.length - 1];
-  const rir = Number.isFinite(last.rir) ? last.rir : 0;
-  const w0 = first.w, r0 = first.r;
-  const best = Math.max(...done.map((s, i) => e1rm(s.w, s.r, i === done.length - 1 ? rir : 0)));
-  const up = () => boundedIncrease(w0, loadFor(best, ex.rmin), ex.inc);
-
-  if (rir >= 2) return { w: up(), target: ex.rmin, status: 'force', miss: false, reason: `RIR ${rir} en la última serie: aumento forzado.` };
-  if (r0 >= ex.rmax) return { w: up(), target: ex.rmin, status: 'up', miss: false, reason: `${r0} reps en la 1.ª serie: techo del rango alcanzado.` };
+  const w0 = done[0].w, r0 = done[0].r;
+  const last = done[done.length - 1], lastIdx = done.length - 1;
+  const lastRir = Number.isFinite(last.rir) ? last.rir : null;
+  const lastHi = rirTarget(ex, lastIdx)[1];
+  const best = Math.max(...done.map(setE1));
+  // Subida "ligera": al menos un incremento, como máximo +5 %, apuntando al extremo inferior del rango.
+  const up = () => {
+    const lo = r2(w0 + ex.inc), hi = Math.max(lo, floorInc(w0 * 1.05, ex.inc));
+    return clamp(floorInc(loadFor(best, ex.rmin + rirTarget(ex, 0)[0]), ex.inc), lo, hi);
+  };
+  const allTop = done.length >= ex.sets && done.every(s => s.r >= ex.rmax);
+  if (allTop) return { w: up(), target: ex.rmin, status: 'up', miss: false, reason: `Máximo del rango (${ex.rmax}) en todas las series: subí la carga y volvé a ${ex.rmin} reps.` };
+  if (lastRir != null && lastRir > lastHi) return { w: up(), target: ex.rmin, status: 'force', miss: false, reason: `Última serie con RIR ${lastRir} (objetivo ${rirLabel(rirTarget(ex, lastIdx))}): la carga quedó liviana.` };
   if (r0 < ex.rmin) {
     if (prev.miss) return { w: floorInc(w0 * 0.90, ex.inc), target: ex.rmin + 1, status: 'down', miss: false, reason: 'Dos sesiones seguidas bajo el rango: descarga del 10 %.' };
-    return { w: w0, target: ex.rmin, status: 'hold', miss: true, reason: `${r0} reps, bajo el mínimo de ${ex.rmin}. Repetí la carga.` };
+    return { w: w0, target: ex.rmin, status: 'hold', miss: true, reason: `${r0} reps en la 1.ª serie, bajo el mínimo de ${ex.rmin}. Repetí la carga.` };
   }
-  const target = Math.min(r0 + 1, ex.rmax);
-  return { w: w0, target, status: 'hold', miss: false, reason: `Dentro del rango. Objetivo: ${target} reps en la 1.ª serie.` };
+  const shortest = Math.min(...done.map(s => s.r));
+  const target = Math.min(ex.rmax, shortest + 1);
+  return { w: w0, target, status: 'hold', miss: false, reason: `Mantené la carga y sumá reps hasta ${ex.rmax} en todas las series.` };
 }
 
 /* =====================================================================
@@ -368,7 +394,7 @@ function jointAlert(history) {
    5) APROXIMACIÓN (calentamiento) para básicos pesados
    ===================================================================== */
 function warmup(ex, w) {
-  if (ex.cat !== 'b' || !(w > 0)) return [];
+  if (ex.cat !== 'b' || ex.kind !== 'comp' || !(w > 0)) return [];
   return [[0.5, 8], [0.7, 4], [0.85, 2]].map(([p, reps]) => ({ w: Math.max(ex.inc, floorInc(w * p, ex.inc)), reps }));
 }
 
@@ -391,7 +417,7 @@ function plannedVolume() {
 }
 
 /* =====================================================================
-   7) PROYECCIÓN DE DURACIÓN (objetivo Onori: 45–60 min)
+   7) PROYECCIÓN DE DURACIÓN (objetivo: 45–60 min)
    ===================================================================== */
 function projectDuration(day, setsByEx, startedAt, now) {
   const planned = day.ex.reduce((a, e) => a + e.sets, 0);
@@ -436,7 +462,7 @@ const chrono = sessions => sessions.slice().sort((a, b) => a.startedAt - b.start
 const topSet = e => (e.sets || []).find(x => x.w > 0) || null;
 function bestE1(e) {
   const ss = e.sets || [];
-  const v = Math.max(0, ...ss.map((x, i) => e1rm(x.w, x.r, i === ss.length - 1 ? (x.rir || 0) : 0)));
+  const v = Math.max(0, ...ss.map(setE1));
   return v || e.e1rm || 0;
 }
 
@@ -486,12 +512,16 @@ function weeklySeries(sessions, n, now) {
 
 /* Cumplimiento del rango y precisión de fallo (RIR de la última serie). */
 function setQuality(sessions) {
-  const q = { below: 0, inRange: 0, above: 0, lastSets: 0, nearFail: 0 };
+  const q = { below: 0, inRange: 0, above: 0, rirSets: 0, onTarget: 0, tooEasy: 0, tooHard: 0 };
   for (const s of sessions) for (const e of s.exercises || []) {
     const ex = EX[e.id]; if (!ex) continue;
-    for (const x of e.sets || []) { if (x.r < ex.rmin) q.below++; else if (x.r > ex.rmax) q.above++; else q.inRange++; }
-    const last = (e.sets || [])[(e.sets || []).length - 1];
-    if (last && Number.isFinite(last.rir)) { q.lastSets++; if (last.rir <= 1) q.nearFail++; }
+    (e.sets || []).forEach((x, i) => {
+      if (x.r < ex.rmin) q.below++; else if (x.r > ex.rmax) q.above++; else q.inRange++;
+      if (!Number.isFinite(x.rir)) return;
+      const [lo, hi] = rirTarget(ex, i);
+      q.rirSets++;
+      if (x.rir > hi) q.tooEasy++; else if (x.rir < lo) q.tooHard++; else q.onTarget++;
+    });
   }
   q.total = q.below + q.inRange + q.above;
   return q;
@@ -521,6 +551,7 @@ function jointCounts(sessions) {
 }
 
 if (typeof module !== 'undefined') module.exports = {
+  rirTarget, rirLabel, setE1,
   DAY_MS, weekStartOf, exerciseProgress, strengthIndex, weeklySeries, setQuality, prEvents, jointCounts,
   ROUTINE, supersetPartner, groupLock,
   CAT, MUSCLES, DAYS, EX, floorInc, e1rm, loadFor, boundedIncrease, suggestAfterSet,
@@ -691,7 +722,7 @@ function viewHome() {
   const others = DAYS.filter(d => d.n !== nd);
   const dd = DAY(nd);
   return `
-  <div class="top"><div class="row between"><div class="disp brand">Bitácora Onori<small>Prioridad brazos · 4 días · al fallo real</small></div>${storageBadge()}</div></div>
+  <div class="top"><div class="row between"><div class="disp brand">Bitácora Onori<small>Espalda, hombros y brazos · 4 días · RIR por serie</small></div>${storageBadge()}</div></div>
   <div class="stack" style="margin-top:14px">
     ${act ? `<button class="panel row" data-act="resume" style="text-align:left;border-color:var(--accent)">
         <div class="grow"><div class="eyebrow" style="color:var(--accent)">Sesión en curso</div><div style="font-weight:700;font-size:18px">Día ${act.day} · ${DAY(act.day).title} — ${DAY(act.day).focus}</div>
@@ -745,8 +776,9 @@ function exTarget(ex) {
   const l = logged(ex.id), p = S.profile.prog[ex.id] || {};
   const wTarget = S.active.nextW[ex.id] != null ? S.active.nextW[ex.id] : (l.length ? l[0].w : p.w);
   const wu = warmup(ex, p.w);
-  return `${wTarget != null && wTarget !== '' ? `<div class="target">Carga: <b>${kg(wTarget)} ${unit(ex)}</b>${p.status && p.status !== 'new' && !l.length ? ` · <span class="chip ${p.status}">${STATUS[p.status]}</span> <span class="muted">${esc(p.reason || '')}</span>` : ''}${p.target && !l.length ? ` · objetivo <b>${p.target}</b> reps` : ''}</div>` : `<div class="target muted">Primera vez: elegí una carga que llegue al fallo dentro de ${ex.rmin}–${ex.rmax} reps.</div>`}
+  return `${wTarget != null && wTarget !== '' ? `<div class="target">Carga: <b>${kg(wTarget)} ${unit(ex)}</b>${p.status && p.status !== 'new' && !l.length ? ` · <span class="chip ${p.status}">${STATUS[p.status]}</span> <span class="muted">${esc(p.reason || '')}</span>` : ''}${p.target && !l.length ? ` · objetivo <b>${p.target}</b> reps` : ''}</div>` : `<div class="target muted">Primera vez: elegí una carga para ${ex.rmin}–${ex.rmax} reps dejando ${ex.kind === 'comp' ? '1–2 reps en reserva' : '1 rep en reserva (fallo solo en la última)'}.</div>`}
     ${wu.length && !l.length ? `<div class="warm">Aproximación: ${wu.map(x => `<span class="num">${x.reps}×${kg(x.w)}</span>`).join(' · ')}</div>` : ''}
+    <div class="warm"><b style="color:var(--ink)">Esfuerzo:</b> ${ex.kind === 'comp' ? 'compuesto, dejá <b>1–2 reps en reserva</b> en todas las series.' : `aislamiento, <b>RIR 1</b> (cerca del fallo)${ex.sets > 1 ? '; el fallo solo en la última serie' : ''}.`}</div>
     ${ex.note ? `<div class="warm">${esc(ex.note)}</div>` : ''}`;
 }
 function exNote(ex) {
@@ -755,9 +787,11 @@ function exNote(ex) {
     const pr = nextPrescription(ex, l, S.profile.prog[ex.id]);
     return `<div class="note ${pr.status === 'up' || pr.status === 'force' ? 'high' : pr.status === 'down' ? 'low' : ''}">Próxima sesión: <b class="num">${kg(pr.w)}</b> ${unit(ex)} · <span class="chip ${pr.status}">${STATUS[pr.status]}</span> ${esc(pr.reason)}</div>`;
   }
-  const sg = last ? suggestAfterSet(ex, last) : null;
+  const sg = last ? suggestAfterSet(ex, last, l.length - 1) : null;
   if (sg && sg.type === 'low') return `<div class="note low">Serie ${l.length}: ${last.r} reps, ${sg.deficit} bajo el mínimo. ${sg.primary === 'rest' ? `Recomendado: <b>+45 s</b> de descanso. Alternativa: bajar a <b class="num">${kg(sg.wDown)}</b> ${unit(ex)}.` : `Recomendado: bajar a <b class="num">${kg(sg.wDown)}</b> ${unit(ex)} (−${Math.round(sg.pct * 100)} %). Alternativa: +45 s.`}</div>`;
   if (sg && sg.type === 'high') return `<div class="note high">Serie ${l.length}: ${last.r} reps, sobre el rango. Subí a <b class="num">${kg(sg.wUp)}</b> ${unit(ex)} en la próxima.</div>`;
+  if (sg && sg.type === 'easy') return `<div class="note high">Serie ${l.length}: te quedaron ${last.rir} en reserva (objetivo ${rirLabel(sg.target)}). Subí a <b class="num">${kg(sg.wUp)}</b> ${unit(ex)} en la próxima.</div>`;
+  if (sg && sg.type === 'hard') return `<div class="note">Serie ${l.length}: llegaste ${last.rir === 0 ? 'al fallo' : `a RIR ${last.rir}`} (objetivo ${rirLabel(sg.target)}). Mantené la carga y cortá la próxima serie ${ex.kind === 'comp' ? 'dejando 1–2 reps' : 'a 1 rep del fallo'}.</div>`;
   return '';
 }
 function exCard(d, ex) {
@@ -832,7 +866,7 @@ function setRow(ex, i) {
     return `<button class="set done" data-act="edit" data-ex="${ex.id}" data-i="${i}">
       <span class="idx">${i + 1}</span><span class="val">${kg(s.w)} <span class="muted" style="font-size:13px">${unit(ex)}</span> × <span class="${cls}">${s.r}</span>${s.rir != null ? ` <span class="muted" style="font-size:13px">RIR ${s.rir}</span>` : ''}</span><span class="tick">✓</span></button>`;
   }
-  if (st === 'ready') return `<button class="set ready" data-act="log" data-ex="${ex.id}" data-i="${i}"><span class="idx">${i + 1}</span><span class="val">Registrar serie ${i + 1}</span><span class="st">›</span></button>`;
+  if (st === 'ready') return `<button class="set ready" data-act="log" data-ex="${ex.id}" data-i="${i}"><span class="idx">${i + 1}</span><span class="val">Registrar serie ${i + 1} <span class="muted" style="font-weight:500;font-size:14px">· ${rirLabel(rirTarget(ex, i))}</span></span><span class="st">›</span></button>`;
   return `<div class="set locked"><span class="idx">${i + 1}</span><span class="val" style="font-family:var(--f-body);font-size:15px">${st === 'rest' ? 'Bloqueada: descanso en curso' : st === 'pair' ? 'Cerrá primero la serie anterior' : 'Pendiente'}</span><span class="st">${st === 'rest' ? '🔒' : ''}</span></div>`;
 }
 
@@ -866,7 +900,7 @@ function viewFinish() {
       <div><div class="eyebrow">Eficiencia</div><div class="disp num" style="font-size:44px">${nf.format(Math.round(e * 10) / 10)}%</div></div>
       <div><div class="eyebrow">Duración</div><div class="disp num" style="font-size:44px">${Math.round((Date.now() - a.startedAt) / 60000)}′</div></div>
       <div><div class="eyebrow">Tonelaje</div><div class="disp num" style="font-size:44px">${nf.format(Math.round(tonnage))}</div></div>
-      ${missing ? `<div class="muted" style="font-size:14px;flex-basis:100%">${missing} serie${missing > 1 ? 's' : ''} sin registrar: cuentan como fallo completo.</div>` : ''}
+      ${missing ? `<div class="muted" style="font-size:14px;flex-basis:100%">${missing} serie${missing > 1 ? 's' : ''} sin registrar: cuentan como reps no hechas.</div>` : ''}
     </div>
     <p class="muted" style="margin:0;font-size:15px">Marcá cada ejercicio. Verde: sin molestia. Amarillo: molestia leve. Rojo: dolor articular. Dos rojos en las últimas 3 sesiones sugieren cambiar a una variante en máquina.</p>
     ${done.map(ex => { const f = a.fatigue[ex.id] || { c: 'v', j: [] }; return `
@@ -1019,7 +1053,9 @@ function viewStats() {
       ${q.total ? `<div class="sbar" role="img" aria-label="Series bajo, dentro y sobre el rango">
         ${q.below ? `<i style="width:${qp('below')}%;background:var(--red)"></i>` : ''}${q.inRange ? `<i style="width:${qp('inRange')}%;background:var(--green)"></i>` : ''}${q.above ? `<i style="width:${qp('above')}%;background:var(--blue)"></i>` : ''}</div>
       <div class="legend"><span><i style="background:var(--red)"></i>Bajo el rango ${Math.round(qp('below'))} %</span><span><i style="background:var(--green)"></i>En rango ${Math.round(qp('inRange'))} %</span><span><i style="background:var(--blue)"></i>Sobre el rango ${Math.round(qp('above'))} %</span></div>
-      <div style="font-size:15px;border-top:1px solid var(--line);padding-top:10px"><b class="num">${q.lastSets ? Math.round(q.nearFail / q.lastSets * 100) : 0} %</b> de tus últimas series terminaron al fallo o a 1 rep <span class="muted">(RIR ≤ 1). El método pide RIR 0.</span></div>` : '<div class="chart-empty">Sin series en los últimos 30 días.</div>'}
+      ${q.rirSets ? `<div style="border-top:1px solid var(--line);padding-top:10px"><div class="eyebrow" style="margin-bottom:8px">Esfuerzo (RIR) respecto del objetivo</div>
+        <div class="sbar" role="img" aria-label="Series más fáciles, en objetivo y más duras que el RIR objetivo">${q.tooEasy ? `<i style="width:${q.tooEasy / q.rirSets * 100}%;background:var(--blue)"></i>` : ''}${q.onTarget ? `<i style="width:${q.onTarget / q.rirSets * 100}%;background:var(--green)"></i>` : ''}${q.tooHard ? `<i style="width:${q.tooHard / q.rirSets * 100}%;background:var(--yellow)"></i>` : ''}</div>
+        <div class="legend" style="margin-top:8px"><span><i style="background:var(--blue)"></i>Más fácil ${Math.round(q.tooEasy / q.rirSets * 100)} %</span><span><i style="background:var(--green)"></i>En objetivo ${Math.round(q.onTarget / q.rirSets * 100)} %</span><span><i style="background:var(--yellow)"></i>Más dura ${Math.round(q.tooHard / q.rirSets * 100)} %</span></div></div>` : ''}` : '<div class="chart-empty">Sin series en los últimos 30 días.</div>'}
     </div>
 
     <div class="panel stack"><div><div class="eyebrow">Volumen de esta semana por músculo</div><div class="muted" style="font-size:13px">Series · directo 1, indirecto 0,5 · <span style="color:var(--accent)">|</span> = planificado</div></div>
@@ -1087,7 +1123,8 @@ function renderRest() {
       <div class="row" style="flex-wrap:wrap;gap:8px">
         <button class="btn sm ${sg.primary === 'rest' ? 'primary' : ''}" data-act="add45" ${r.applied45 ? 'disabled' : ''}>${r.applied45 ? '+45 s aplicado' : '+45 s descanso'}</button>
         <button class="btn sm ${sg.primary === 'load' ? 'primary' : ''}" data-act="applyw" data-ex="${sx.id}" data-w="${sg.wDown}" ${ap[sx.id] === sg.wDown ? 'disabled' : ''}>${ap[sx.id] === sg.wDown ? 'Carga ajustada' : `Bajar a ${kg(sg.wDown)} ${unit(sx)}`}</button></div>`;
-    return `<div class="sg">${who}: sobre el rango.</div><div class="row"><button class="btn sm primary" data-act="applyw" data-ex="${sx.id}" data-w="${sg.wUp}" ${ap[sx.id] === sg.wUp ? 'disabled' : ''}>${ap[sx.id] === sg.wUp ? 'Carga ajustada' : `Subir a ${kg(sg.wUp)} ${unit(sx)}`}</button></div>`;
+    if (sg.type === 'hard') return `<div class="sg">${who}: RIR ${sg.rir}, por debajo del objetivo (${rirLabel(sg.target)}). Mantené la carga y cortá antes.</div>`;
+    return `<div class="sg">${who}: ${sg.type === 'easy' ? `RIR ${sg.rir}, más fácil que el objetivo (${rirLabel(sg.target)}).` : 'sobre el rango.'}</div><div class="row"><button class="btn sm primary" data-act="applyw" data-ex="${sx.id}" data-w="${sg.wUp}" ${ap[sx.id] === sg.wUp ? 'disabled' : ''}>${ap[sx.id] === sg.wUp ? 'Carga ajustada' : `Subir a ${kg(sg.wUp)} ${unit(sx)}`}</button></div>`;
   }).join('');
   const what = r.group ? 'Superserie A + B' : exName(ex);
   restEl.className = 'rest' + (r.done ? ' over' : '');
@@ -1134,27 +1171,31 @@ function renderSheet() {
     return;
   }
   const sh = S.sheet; if (!sh) { sheetEl.innerHTML = ''; return; }
-  const ex = EX[sh.exId]; const isLast = sh.idx === ex.sets - 1;
+  const ex = EX[sh.exId]; const tg = rirTarget(ex, sh.idx);
+  const rirChips = act => `<div class="rirs">${[0, 1, 2, 3, 4].map(n => `<button data-act="${act}" data-n="${n}" aria-pressed="${sh.rir === n}" class="${n >= tg[0] && n <= tg[1] ? 'tgt' : ''}">${n === 4 ? '4+' : n}</button>`).join('')}</div>`;
+  const rirHint = () => {
+    if (sh.rir == null) return `<div class="muted" style="font-size:13px;margin-top:6px">Objetivo de esta serie: <b>${rirLabel(tg)}</b> (marcado con borde).</div>`;
+    if (sh.rir > tg[1]) return `<div style="font-size:13px;margin-top:6px;color:var(--green)">Quedó liviana para el objetivo (${rirLabel(tg)}): te voy a sugerir más carga.</div>`;
+    if (sh.rir < tg[0]) return `<div style="font-size:13px;margin-top:6px;color:var(--yellow)">${ex.kind === 'comp' ? 'En compuestos conviene dejar 1–2 en reserva.' : 'Guardá el fallo para la última serie.'}</div>`;
+    return `<div style="font-size:13px;margin-top:6px;color:var(--green)">En objetivo ✓</div>`;
+  };
+  const rirQ = `<div class="eyebrow" style="margin-bottom:6px">¿Cuántas reps te quedaron en reserva? (RIR)</div>`;
   if (sh.rirOnly) {
     sheetEl.innerHTML = `<div class="scrim" data-act="closesheet"><div class="sheet" data-stop="1" role="dialog" aria-label="Repeticiones en reserva"><div class="sheet-in">
-      <div><div class="eyebrow">Última serie · ${esc(exName(ex))}</div><div class="num" style="font-size:22px;font-weight:600;margin-top:4px">${kg(sh.w)} ${unit(ex)} × ${sh.r}</div></div>
-      <div><div class="eyebrow" style="margin-bottom:6px">¿Cuántas reps más podías sacar? (RIR)</div>
-      <div class="rirs">${[0, 1, 2, 3, 4].map(n => `<button data-act="rirsave" data-n="${n}">${n === 4 ? '4+' : n}</button>`).join('')}</div>
-      <div class="muted" style="font-size:13px;margin-top:6px">RIR ≥ 2 fuerza el aumento de carga de este ejercicio en la próxima sesión.</div></div>
+      <div><div class="eyebrow">Serie ${sh.idx + 1} de ${ex.sets} · ${esc(exName(ex))}</div><div class="num" style="font-size:22px;font-weight:600;margin-top:4px">${kg(sh.w)} ${unit(ex)} × ${sh.r}</div></div>
+      <div>${rirQ}${rirChips('rirsave')}${rirHint()}</div>
     </div></div></div>`;
     return;
   }
-  const canSave = sh.w !== '' && sh.w >= 0 && sh.r >= 0 && (!isLast || sh.rir != null);
+  const canSave = sh.w !== '' && sh.w >= 0 && sh.r >= 0 && sh.rir != null;
   sheetEl.innerHTML = `<div class="scrim" data-act="closesheet"><div class="sheet" data-stop="1" role="dialog" aria-label="Registrar serie"><div class="sheet-in">
     <div class="row between"><div><div class="eyebrow">${sh.edit ? 'Editar' : 'Serie'} ${sh.idx + 1} de ${ex.sets}${ex.uni ? ' · pierna más débil' : ''}</div><div style="font-weight:700;font-size:18px">${esc(exName(ex))}</div></div><span class="num muted">${ex.rmin}–${ex.rmax} reps</span></div>
     <div><div class="eyebrow" style="margin-bottom:6px">Carga (${unit(ex)})</div>
       <div class="stepper"><button data-act="w" data-d="-1" aria-label="Menos carga">−</button><input id="in-w" inputmode="decimal" autocomplete="off" value="${sh.w === '' ? '' : String(sh.w).replace('.', ',')}" placeholder="kg" aria-label="Carga en kilos"><button data-act="w" data-d="1" aria-label="Más carga">+</button></div>
       <div class="muted" style="font-size:12px;margin-top:4px">Paso de ${kg(ex.inc)} kg</div></div>
-    <div><div class="eyebrow" style="margin-bottom:6px">Repeticiones al fallo</div>
+    <div><div class="eyebrow" style="margin-bottom:6px">Repeticiones</div>
       <div class="stepper"><button data-act="r" data-d="-1" aria-label="Menos repeticiones">−</button><input id="in-r" inputmode="numeric" autocomplete="off" value="${sh.r}" aria-label="Repeticiones"><button data-act="r" data-d="1" aria-label="Más repeticiones">+</button></div></div>
-    ${isLast ? `<div><div class="eyebrow" style="margin-bottom:6px">¿Cuántas reps más podías sacar? (RIR)</div>
-      <div class="rirs">${[0, 1, 2, 3, 4].map(n => `<button data-act="rir" data-n="${n}" aria-pressed="${sh.rir === n}">${n === 4 ? '4+' : n}</button>`).join('')}</div>
-      ${sh.rir >= 2 ? `<div style="font-size:13px;margin-top:6px;color:var(--green)">RIR ≥ 2: la próxima sesión sube la carga.</div>` : ''}</div>` : ''}
+    <div>${rirQ}${rirChips('rir')}${rirHint()}</div>
     <button class="btn primary block" data-act="saveset" ${canSave ? '' : 'disabled'}>${sh.edit ? 'Guardar cambios' : 'Serie hecha · iniciar descanso'}</button>
   </div></div></div>`;
 }
@@ -1184,7 +1225,7 @@ function commitSet(ex, set) {
   a.sets[ex.id].push(set);
   delete a.nextW[ex.id];
   delete S.draft[ex.id + ':' + (a.sets[ex.id].length - 1)];
-  const e = e1rm(set.w, set.r, set.rir || 0);
+  const e = setE1(set);
   if (e > (S.profile.best[ex.id] || 0) && S.profile.best[ex.id]) toast(`Récord estimado: e1RM ${kg(Math.round(e * 10) / 10)} kg`);
   const ra = restAfter(d, ex, a.sets);
   if (ra.rest === 0 && ra.next) {
@@ -1197,8 +1238,8 @@ function commitSet(ex, set) {
     const suggs = members.map(m => {
       const l = logged(m.id), last = l[l.length - 1];
       if (!last || l.length >= m.sets) return null;
-      const sg = suggestAfterSet(m, last);
-      return sg.type === 'low' || sg.type === 'high' ? { exId: m.id, ...sg } : null;
+      const sg = suggestAfterSet(m, last, l.length - 1);
+      return ['low', 'high', 'easy', 'hard'].includes(sg.type) ? { exId: m.id, ...sg } : null;
     }).filter(Boolean);
     a.rest = { startedAt: now, endsAt: now + ra.rest * 1000, total: ra.rest * 1000, exId: ex.id, group: ex.g || null, suggs, applied: {}, done: false };
   }
@@ -1219,7 +1260,7 @@ function finishSave() {
       const ja = jointAlert(P.joint[ex.id]);
       if (ja.swap && !P.swaps[ex.id]) res.swaps.push({ id: ex.id, name: exName(ex), alt: ex.alt });
       else if (ja.watch) res.watch.push(exName(ex));
-      const best = Math.max(...l.map((s, i) => e1rm(s.w, s.r, i === l.length - 1 ? (s.rir || 0) : 0)));
+      const best = Math.max(...l.map(setE1));
       if (best > (P.best[ex.id] || 0)) { if (P.best[ex.id]) res.prs.push({ name: exName(ex), e: Math.round(best * 10) / 10 }); P.best[ex.id] = best; }
       tonnage += l.reduce((t, x) => t + x.w * x.r * (ex.per ? 2 : 1), 0);
       exercises.push({ id: ex.id, name: exName(ex), cat: ex.cat, ss: ex.g || null, sets: l, e1rm: Math.round(best * 10) / 10, light: f.c, joints: f.j });
@@ -1267,8 +1308,8 @@ document.addEventListener('input', ev => {
   if (ev.target.id === 'in-r') { const n = parseNum(ev.target.value); S.sheet.r = n === '' ? 0 : n; refreshSaveBtn(); }
 });
 function refreshSaveBtn() {
-  const sh = S.sheet, ex = EX[sh.exId], isLast = sh.idx === ex.sets - 1;
-  const b = sheetEl.querySelector('[data-act="saveset"]'); if (b) b.disabled = !(sh.w !== '' && sh.w >= 0 && sh.r >= 0 && (!isLast || sh.rir != null));
+  const sh = S.sheet;
+  const b = sheetEl.querySelector('[data-act="saveset"]'); if (b) b.disabled = !(sh.w !== '' && sh.w >= 0 && sh.r >= 0 && sh.rir != null);
 }
 
 /* Mantener apretado + o −: repite el paso (tras 400 ms, cada 110 ms). */
@@ -1305,7 +1346,7 @@ document.addEventListener('click', ev => {
       S.sheet = { exId: ex.id, idx: i, w: p.w, r: p.r, rir: null, edit: false }; renderSheet(); break; }
     case 'edit': {
       const ex = EX[el.dataset.ex], i = +el.dataset.i, s = logged(ex.id)[i];
-      S.sheet = { exId: ex.id, idx: i, w: s.w, r: s.r, rir: s.rir != null ? s.rir : (i === ex.sets - 1 ? 0 : null), edit: true }; renderSheet(); break; }
+      S.sheet = { exId: ex.id, idx: i, w: s.w, r: s.r, rir: s.rir != null ? s.rir : null, edit: true }; renderSheet(); break; }
     case 'w': case 'r': if (holdUsed) { holdUsed = false; break; } stepSheet(act, +el.dataset.d); break;
     case 'rir': S.sheet.rir = +el.dataset.n; renderSheet(); break;
     case 'saveset': saveSet(); break;
@@ -1315,8 +1356,7 @@ document.addEventListener('click', ev => {
       const dr = S.draft[ex.id + ':' + i] || prefill(ex, i);
       if (dr.w === '' || dr.r === '' || !(dr.r >= 0)) { toast('Completá la carga y las reps.'); break; }
       const set = { w: dr.w, r: Math.max(0, Math.round(dr.r)) };
-      if (i === ex.sets - 1) { S.sheet = { exId: ex.id, idx: i, w: set.w, r: set.r, rir: null, rirOnly: true }; renderSheet(); break; }
-      commitSet(ex, set); break; }
+      S.sheet = { exId: ex.id, idx: i, w: set.w, r: set.r, rir: null, rirOnly: true }; renderSheet(); break; }
     case 'rirsave': { const sh = S.sheet; S.sheet = null; commitSet(EX[sh.exId], { w: sh.w, r: sh.r, rir: +el.dataset.n }); break; }
     case 'closesheet': S.sheet = null; renderSheet(); break;
     case 'add45': a.rest.endsAt += 45000; a.rest.total += 45000; a.rest.applied45 = true; saveActive(); renderRest(); break;
