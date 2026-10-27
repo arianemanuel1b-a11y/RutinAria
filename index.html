@@ -37,13 +37,17 @@
 :root[data-theme="dark"]{
   --bg:#141312; --surface:#1d1c1a; --sunk:#262421; --ink:#f0ebe4; --muted:#a39b91; --line:#35322e;
   --red:#ec5547; --blue:#6b9cec; --yellow:#e7b632; --green:#4fbf7e; --on-accent:#140f0e; color-scheme:dark}
-html{box-sizing:border-box;height:100%;background:var(--surface);overscroll-behavior:none}
-body{height:100%;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
+/* Carcasa fija de pantalla completa: solo #app se desplaza; las pestañas quedan pegadas abajo. */
+html{box-sizing:border-box;background:var(--bg);overscroll-behavior:none}
+body{position:fixed;inset:0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
+/* iOS 26 (WebKit 301108): en apps instaladas con barra translúcida la ventana queda más corta que la pantalla
+   mientras el documento sea más bajo que ella. Un documento de al menos una pantalla le devuelve el alto completo. */
+@media (display-mode: standalone){html{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0px)))}}
 #app{flex:1 1 auto;min-height:0;width:100%;box-sizing:border-box;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 button,.set,.stepper,.rirs,.lights{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
-.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 calc(32px + env(safe-area-inset-bottom,0px))}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
@@ -154,7 +158,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .joints button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 
 /* tabs */
-.tabs{position:relative;flex:none;z-index:15;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs{position:relative;flex:none;z-index:15;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
 .tabs button{flex:1;max-width:200px;height:56px;font-size:14px;font-weight:600;color:var(--muted)}
 .tabs button[aria-current="page"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--accent)}
 
