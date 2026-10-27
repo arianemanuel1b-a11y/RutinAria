@@ -37,11 +37,13 @@
 :root[data-theme="dark"]{
   --bg:#141312; --surface:#1d1c1a; --sunk:#262421; --ink:#f0ebe4; --muted:#a39b91; --line:#35322e;
   --red:#ec5547; --blue:#6b9cec; --yellow:#e7b632; --green:#4fbf7e; --on-accent:#140f0e; color-scheme:dark}
-html,body{background:var(--bg)}
+html{box-sizing:border-box;height:100%;background:var(--surface);overscroll-behavior:none}
+body{height:100%;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
+#app{flex:1 1 auto;min-height:0;width:100%;box-sizing:border-box;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 button,.set,.stepper,.rirs,.lights{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
-.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 120px}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
@@ -56,7 +58,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 
 /* barra superior */
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;padding:8px max(16px,env(safe-area-inset-left,0px)) 10px;border-bottom:1px solid var(--line)}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;padding:8px max(16px,env(safe-area-inset-left,0px)) 10px;border-bottom:1px solid var(--line)}
 .brand{font-size:30px}
 .brand small{display:block;font-family:var(--f-body);font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);margin-top:4px}
 .badge{font-size:12px;padding:3px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
@@ -152,7 +154,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .joints button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 
 /* tabs */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs{position:relative;flex:none;z-index:15;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
 .tabs button{flex:1;max-width:200px;height:56px;font-size:14px;font-weight:600;color:var(--muted)}
 .tabs button[aria-current="page"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--accent)}
 
@@ -166,6 +168,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translateX(-50%);z-index:40;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
 
 /* documento técnico */
+.day-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.day-row b{display:block;font-weight:700;font-size:16px}
+.day-row small{display:block;color:var(--muted);font-size:13px}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}
 .tile .v{font-family:var(--f-display);font-weight:900;font-size:38px;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums}
@@ -701,7 +706,7 @@ function viewHome() {
         </div>`; }).join('')}</div>
       ${act ? '' : `<button class="btn primary block" data-act="start" data-n="${nd}">Empezar Día ${nd}</button>`}
     </div>
-    ${act ? '' : `<div class="row" style="flex-wrap:wrap;gap:8px">${others.map(d => `<button class="btn ghost sm" data-act="start" data-n="${d.n}">Día ${d.n} · ${d.title} (${d.focus})</button>`).join('')}</div>`}
+    ${act ? '' : `<div class="stack" style="gap:8px"><div class="eyebrow">Otro día</div>${others.map(d => `<button class="day-row" data-act="start" data-n="${d.n}"><span class="num muted" style="font-size:13px;width:44px">Día ${d.n}</span><span class="grow"><b>${d.title}</b><small>${d.focus}</small></span><span class="muted" style="font-size:22px">›</span></button>`).join('')}</div>`}
   </div>`;
 }
 
@@ -1156,7 +1161,7 @@ function startSession(n) {
   unlockAudio();
   S.draft = {};
   S.active = { id: 's' + Date.now(), rv: ROUTINE, day: n, startedAt: Date.now(), updatedAt: Date.now(), phase: 'train', sets: {}, nextW: {}, rest: null, fatigue: {} };
-  saveActive(); S.view = 'session'; render(); keepAwake(); window.scrollTo(0, 0);
+  saveActive(); S.view = 'session'; render(); keepAwake(); app.scrollTo(0, 0);
 }
 function saveSet() {
   const sh = S.sheet, a = S.active, ex = EX[sh.exId];
@@ -1222,7 +1227,7 @@ function finishSave() {
   S.sessions = [session, ...S.sessions.filter(s => s.id !== session.id)];
   saveProfile(); Store.addSession(session);
   S.active = null; Store.put('active', null); releaseAwake();
-  S.result = res; S.view = 'result'; render(); window.scrollTo(0, 0);
+  S.result = res; S.view = 'result'; render(); app.scrollTo(0, 0);
 }
 async function doExport() {
   const data = JSON.stringify({ app: 'bitacora-onori', v: 1, exportedAt: new Date().toISOString(), profile: S.profile, sessions: S.sessions }, null, 1);
@@ -1283,8 +1288,8 @@ document.addEventListener('click', ev => {
   if (el.classList.contains('scrim') && ev.target.closest('[data-stop]')) return;
   const act = el.dataset.act, a = S.active;
   switch (act) {
-    case 'tab': S.view = el.dataset.v; render(); window.scrollTo(0, 0); break;
-    case 'home': S.view = 'home'; S.result = null; render(); window.scrollTo(0, 0); break;
+    case 'tab': S.view = el.dataset.v; render(); app.scrollTo(0, 0); break;
+    case 'home': S.view = 'home'; S.result = null; render(); app.scrollTo(0, 0); break;
     case 'resume': S.view = 'session'; unlockAudio(); render(); keepAwake(); break;
     case 'start':
       if (a) { toast('Ya hay una sesión en curso.'); break; }
@@ -1317,7 +1322,7 @@ document.addEventListener('click', ev => {
     case 'restadj': { const d = +el.dataset.d * 1000; a.rest.endsAt = Math.max(Date.now(), a.rest.endsAt + d); a.rest.total = Math.max(1000, a.rest.total + d); saveActive(); tick(); tickText(); break; }
     case 'skip': a.rest.endsAt = Date.now(); a.rest.done = true; saveActive(); render(); break;
     case 'dismiss': a.rest = null; saveActive(); render(); break;
-    case 'finish': a.phase = 'finish'; a.rest = null; saveActive(); render(); window.scrollTo(0, 0); break;
+    case 'finish': a.phase = 'finish'; a.rest = null; saveActive(); render(); app.scrollTo(0, 0); break;
     case 'backtrain': a.phase = 'train'; saveActive(); render(); break;
     case 'light': { const f = a.fatigue[el.dataset.ex] = a.fatigue[el.dataset.ex] || { c: 'v', j: [] }; f.c = el.dataset.c; if (f.c === 'v') f.j = []; saveActive(); render(); break; }
     case 'joint': { const f = a.fatigue[el.dataset.ex]; const j = el.dataset.j; f.j = f.j.includes(j) ? f.j.filter(x => x !== j) : [...f.j, j]; saveActive(); render(); break; }
